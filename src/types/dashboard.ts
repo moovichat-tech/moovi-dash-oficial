@@ -81,3 +81,13 @@ export interface User {
   telefone: string;
   nome?: string;
 }
+
+export interface TransactionFilterState {
+  search: string;
+  dateFrom: Date | undefined;
+  dateTo: Date | undefined;
+  categories: string[];
+  tipo: 'todos' | 'receita' | 'despesa';
+  valorMin: number | undefined;
+  valorMax: number | undefined;
+}
