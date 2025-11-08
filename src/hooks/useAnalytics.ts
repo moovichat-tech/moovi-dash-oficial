@@ -1,7 +1,14 @@
 import { useMemo } from 'react';
 import { DashboardData, Transaction } from '@/types/dashboard';
-import { CategorySpending, MonthlyComparison, CategoryTrend, AnalyticsInsights } from '@/types/analytics';
-import { format, startOfMonth, subMonths } from 'date-fns';
+import { 
+  CategorySpending, 
+  MonthlyComparison, 
+  CategoryTrend, 
+  AnalyticsInsights,
+  PeriodFilter,
+  getPeriodDates 
+} from '@/types/analytics';
+import { format, isWithinInterval, eachMonthOfInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 // Helper para cores consistentes
@@ -18,13 +25,32 @@ function getCategoryColor(categoria: string): string {
   return colors[hash % colors.length];
 }
 
-export function useAnalytics(data: DashboardData | null) {
-  // Gastos por categoria (apenas despesas)
-  const categorySpending = useMemo((): CategorySpending[] => {
+export function useAnalytics(
+  data: DashboardData | null, 
+  periodFilter: PeriodFilter
+) {
+  // Calcular range de datas baseado no filtro
+  const dateRange = useMemo(() => getPeriodDates(periodFilter), [periodFilter]);
+
+  // Filtrar transações pelo período ANTES de processar
+  const filteredTransactions = useMemo(() => {
     if (!data?.transacoes) return [];
 
-    const despesas = data.transacoes.filter(t => t.tipo === 'despesa');
+    return data.transacoes.filter(t => {
+      const transactionDate = new Date(t.data);
+      return isWithinInterval(transactionDate, {
+        start: dateRange.from,
+        end: dateRange.to,
+      });
+    });
+  }, [data, dateRange]);
+
+  // Gastos por categoria (AGORA USA TRANSAÇÕES FILTRADAS)
+  const categorySpending = useMemo((): CategorySpending[] => {
+    const despesas = filteredTransactions.filter(t => t.tipo === 'despesa');
     const total = despesas.reduce((sum, t) => sum + t.valor, 0);
+
+    if (total === 0) return [];
 
     const grouped = despesas.reduce((acc, t) => {
       if (!acc[t.categoria]) {
@@ -49,19 +75,23 @@ export function useAnalytics(data: DashboardData | null) {
         porcentagem: (cat.total / total) * 100,
       }))
       .sort((a, b) => b.total - a.total);
-  }, [data]);
+  }, [filteredTransactions]);
 
-  // Comparação mensal (últimos 6 meses)
+  // Comparação mensal (DINÂMICA baseada no range)
   const monthlyComparison = useMemo((): MonthlyComparison[] => {
-    if (!data?.transacoes) return [];
+    if (filteredTransactions.length === 0) return [];
 
-    const months: MonthlyComparison[] = [];
-    for (let i = 5; i >= 0; i--) {
-      const monthDate = subMonths(startOfMonth(new Date()), i);
+    // Gerar array de meses no range
+    const monthsInRange = eachMonthOfInterval({
+      start: dateRange.from,
+      end: dateRange.to,
+    });
+
+    return monthsInRange.map(monthDate => {
       const monthKey = format(monthDate, 'yyyy-MM');
       const monthName = format(monthDate, 'MMMM yyyy', { locale: ptBR });
 
-      const monthTransactions = data.transacoes.filter(t => 
+      const monthTransactions = filteredTransactions.filter(t => 
         t.data.startsWith(monthKey)
       );
 
@@ -98,18 +128,16 @@ export function useAnalytics(data: DashboardData | null) {
         porcentagem: totalDespesas > 0 ? (cat.total / totalDespesas) * 100 : 0,
       }));
 
-      months.push({
+      return {
         mes: monthKey,
         mesNome: monthName,
         receitas,
         despesas,
         saldo: receitas - despesas,
         categorias,
-      });
-    }
-
-    return months;
-  }, [data]);
+      };
+    });
+  }, [filteredTransactions, dateRange]);
 
   // Tendência por categoria (top 5 categorias nos últimos 6 meses)
   const categoryTrends = useMemo((): CategoryTrend[] => {
@@ -127,11 +155,11 @@ export function useAnalytics(data: DashboardData | null) {
     }));
   }, [categorySpending, monthlyComparison]);
 
-  // Insights calculados
+  // Insights calculados (usa dados filtrados)
   const insights = useMemo((): AnalyticsInsights | null => {
-    if (!data || categorySpending.length === 0) return null;
+    if (categorySpending.length === 0 || filteredTransactions.length === 0) return null;
 
-    const despesas = data.transacoes.filter(t => t.tipo === 'despesa');
+    const despesas = filteredTransactions.filter(t => t.tipo === 'despesa');
     const maiorGasto = despesas.reduce((max, t) => 
       t.valor > max.valor ? t : max
     , despesas[0]);
@@ -171,7 +199,7 @@ export function useAnalytics(data: DashboardData | null) {
       economiaMensal: mediaReceita - mediaMensal,
       categoriaCrescimento,
     };
-  }, [data, categorySpending, monthlyComparison]);
+  }, [categorySpending, monthlyComparison, filteredTransactions]);
 
   return {
     categorySpending,
