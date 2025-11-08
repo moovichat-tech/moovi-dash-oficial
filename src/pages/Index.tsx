@@ -1,14 +1,41 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState, useEffect } from 'react';
+import { PhoneLogin } from '@/components/auth/PhoneLogin';
+import Dashboard from './Dashboard';
+
+const AUTH_STORAGE_KEY = 'moovi-auth';
+
+interface AuthData {
+  jid: string;
+  token: string;
+}
 
 const Index = () => {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
-    </div>
-  );
+  const [auth, setAuth] = useState<AuthData | null>(() => {
+    const stored = localStorage.getItem(AUTH_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : null;
+  });
+
+  useEffect(() => {
+    if (auth) {
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(auth));
+    } else {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+    }
+  }, [auth]);
+
+  const handleLoginSuccess = (jid: string, token: string) => {
+    setAuth({ jid, token });
+  };
+
+  const handleLogout = () => {
+    setAuth(null);
+  };
+
+  if (!auth) {
+    return <PhoneLogin onSuccess={handleLoginSuccess} />;
+  }
+
+  return <Dashboard jid={auth.jid} onLogout={handleLogout} />;
 };
 
 export default Index;

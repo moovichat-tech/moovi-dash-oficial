@@ -1,73 +1,180 @@
-# Welcome to your Lovable project
+# 🐂 Moovi.dash - Dashboard Financeiro Pessoal
 
-## Project info
+Dashboard financeiro pessoal mobile-first com integração n8n e autenticação Twilio Verify.
 
-**URL**: https://lovable.dev/projects/91010774-952d-463c-90cb-de562149988c
+## 🚀 Tecnologias
 
-## How can I edit this code?
+- **Frontend**: React 18 + TypeScript + Vite
+- **Styling**: TailwindCSS + shadcn/ui
+- **Charts**: Recharts
+- **State**: React Hooks + TanStack Query
+- **Auth**: Twilio Verify (2FA SMS)
+- **Backend**: n8n Webhooks + Redis
 
-There are several ways of editing your application.
+## 📋 Pré-requisitos
 
-**Use Lovable**
+- Node.js 18+ e npm
+- Conta n8n configurada com webhooks
+- Conta Twilio (para autenticação)
+- Backend proxy para Twilio (por segurança)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/91010774-952d-463c-90cb-de562149988c) and start prompting.
+## ⚙️ Configuração
 
-Changes made via Lovable will be committed automatically to this repo.
+### 1. Clone e instale
 
-**Use your preferred IDE**
+```bash
+git clone <seu-repo>
+cd moovi-dash
+npm install
+```
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 2. Configure variáveis de ambiente
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Copie `.env.example` para `.env` e preencha:
 
-Follow these steps:
+```env
+VITE_N8N_WEBHOOK_URL=https://seu-n8n.com/webhook
+VITE_DASHBOARD_API_KEY=sua-chave-dashboard-data
+VITE_API_URL=https://sua-api.com
+```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+**⚠️ IMPORTANTE**: Credenciais Twilio devem ficar APENAS no backend/serverless.
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### 3. Configure os webhooks n8n
 
-# Step 3: Install the necessary dependencies.
-npm i
+Crie dois workflows n8n:
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+#### GET /dashboard-data
+- **URL**: `[N8N_URL]/dashboard-data?jid=[JID]`
+- **Header**: `chave-dashboard-data: [SUA_CHAVE]`
+- **Response 200**: JSON completo do dashboard
+- **Response 404**: Quando JID não existir no Redis
+
+#### POST /dashboard-command
+- **URL**: `[N8N_URL]/dashboard-command?jid=[JID]`
+- **Header**: `chave-dashboard-data: [SUA_CHAVE]`
+- **Body**: `{"command": "texto natural do usuário"}`
+- **Response 200**: Comando processado com sucesso
+
+### 4. Configure backend proxy Twilio
+
+Crie endpoints seguros (exemplo: Supabase Edge Functions, Vercel Serverless):
+
+**POST /api/auth/send-code**
+```typescript
+// Envia código via Twilio Verify
+const { phoneNumber } = await req.json();
+// Chamar Twilio Verify API
+```
+
+**POST /api/auth/verify-code**
+```typescript
+// Verifica código
+const { phoneNumber, code } = await req.json();
+// Validar com Twilio
+// Retornar { jid, token }
+```
+
+## 🏃 Desenvolvimento
+
+```bash
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Acesse: `http://localhost:8080`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 🏗️ Build para Produção
 
-**Use GitHub Codespaces**
+```bash
+npm run build
+npm run preview
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 📦 Estrutura do Projeto
 
-## What technologies are used for this project?
+```
+src/
+├── assets/              # Logos e imagens
+├── components/
+│   ├── auth/           # PhoneLogin
+│   ├── dashboard/      # Componentes do dashboard
+│   └── ui/             # shadcn components
+├── hooks/              # useTheme, useDashboard
+├── pages/              # Index, Dashboard, NotFound
+├── services/           # api.ts (GET/POST webhooks)
+├── types/              # TypeScript interfaces
+└── lib/                # Utilitários
+```
 
-This project is built with:
+## 🔒 Segurança
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- ✅ Twilio credentials **nunca** expostas no client
+- ✅ Backend proxy valida todas as chamadas Twilio
+- ✅ Headers de autenticação para webhooks n8n
+- ✅ CORS configurado adequadamente
+- ✅ Rate limiting recomendado no backend
+- ✅ Validação de entrada em todos os formulários
 
-## How can I deploy this project?
+## 📱 Features
 
-Simply open [Lovable](https://lovable.dev/projects/91010774-952d-463c-90cb-de562149988c) and click on Share -> Publish.
+- [x] Login por telefone (2FA SMS)
+- [x] Dashboard responsivo mobile-first
+- [x] Visualização de saldos e transações
+- [x] Gráfico de histórico 30 dias
+- [x] Chat command com linguagem natural
+- [x] Tema claro/escuro com persistência
+- [x] FAB sempre visível
+- [x] Busca e filtros de transações
+- [x] Estado 404 com links de suporte
 
-## Can I connect a custom domain to my Lovable project?
+## 🧪 Testes
 
-Yes, you can!
+```bash
+# Unit tests
+npm run test
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+# E2E tests
+npm run test:e2e
+```
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## 🚀 Deploy
+
+### Variáveis de Ambiente (Produção)
+
+Configure no seu provedor (Vercel, Netlify, etc.):
+- `VITE_N8N_WEBHOOK_URL`
+- `VITE_DASHBOARD_API_KEY`
+- `VITE_API_URL`
+
+### Build otimizado
+
+```bash
+npm run build
+```
+
+Arquivos em `dist/` prontos para deploy.
+
+## 📞 Suporte
+
+- WhatsApp: [+55 11 98926-9937](https://wa.me/5511989269937)
+- Website: [moovi.chat](https://moovi.chat)
+
+## 🎨 Design System
+
+### Cores (HSL)
+- **Primary**: `142 71% 45%` (Verde Moovi)
+- **Success**: `142 71% 45%`
+- **Accent**: `142 84% 60%`
+- **Warning**: `45 93% 47%`
+- **Destructive**: `0 84.2% 60.2%`
+
+### Componentes
+Todos os componentes usam tokens do design system (sem cores hardcoded).
+
+## 📄 Licença
+
+Proprietário - Moovi © 2025
+
+---
+
+Desenvolvido com 💚 pela equipe Moovi
