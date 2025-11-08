@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CategorySpending } from '@/types/analytics';
 import { DrillDownModal } from './DrillDownModal';
+import { ChartExportButtons } from './ChartExportButtons';
 
 interface CategoryPieChartProps {
   data: CategorySpending[];
@@ -10,6 +11,7 @@ interface CategoryPieChartProps {
 
 export function CategoryPieChart({ data }: CategoryPieChartProps) {
   const [selectedCategory, setSelectedCategory] = useState<CategorySpending | null>(null);
+  const chartRef = useRef<HTMLDivElement>(null);
 
   const chartData = data.map(cat => ({
     name: cat.categoria,
@@ -53,11 +55,19 @@ export function CategoryPieChart({ data }: CategoryPieChartProps) {
     <>
       <Card>
         <CardHeader>
-          <CardTitle>Gastos por Categoria</CardTitle>
-          <CardDescription>Clique em uma fatia para ver detalhes</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Gastos por Categoria</CardTitle>
+              <CardDescription>Clique em uma fatia para ver detalhes</CardDescription>
+            </div>
+            <ChartExportButtons 
+              chartRef={chartRef} 
+              filename="gastos-por-categoria"
+            />
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="h-[400px]">
+          <div ref={chartRef} className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie

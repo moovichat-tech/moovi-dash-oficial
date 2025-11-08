@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, FileDown } from 'lucide-react';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useAnalytics } from '@/hooks/useAnalytics';
+import { useChartExport } from '@/hooks/useChartExport';
 import { CategoryPieChart } from '@/components/analytics/CategoryPieChart';
 import { MonthlyComparison } from '@/components/analytics/MonthlyComparison';
 import { CategoryTrendChart } from '@/components/analytics/CategoryTrendChart';
@@ -18,6 +19,7 @@ interface AnalyticsProps {
 
 export default function Analytics({ jid, onBack }: AnalyticsProps) {
   const { data, loading } = useDashboard(jid);
+  const { exportMultipleToPDF } = useChartExport();
   
   // Estado do filtro de período (default: últimos 6 meses)
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>({
@@ -27,6 +29,28 @@ export default function Analytics({ jid, onBack }: AnalyticsProps) {
   
   const { categorySpending, monthlyComparison, categoryTrends, insights } = 
     useAnalytics(data, periodFilter);
+
+  // Refs para todos os gráficos
+  const pieChartRef = useRef<HTMLDivElement>(null);
+  const barChartRef = useRef<HTMLDivElement>(null);
+  const lineChartRef = useRef<HTMLDivElement>(null);
+  const insightsRef = useRef<HTMLDivElement>(null);
+
+  // Função para exportar todos os gráficos
+  const handleExportAll = () => {
+    const elements = [
+      { ref: insightsRef, title: 'Insights Principais' },
+      { ref: pieChartRef, title: 'Gastos por Categoria' },
+      { ref: barChartRef, title: 'Comparação Mensal' },
+      { ref: lineChartRef, title: 'Tendência por Categoria' },
+    ];
+
+    const bgColor = getComputedStyle(document.documentElement)
+      .getPropertyValue('--background')
+      .trim();
+
+    exportMultipleToPDF(elements, 'analytics-completo', bgColor ? `hsl(${bgColor})` : '#ffffff');
+  };
 
   if (loading) {
     return (
@@ -69,6 +93,12 @@ export default function Analytics({ jid, onBack }: AnalyticsProps) {
               <p className="text-muted-foreground">Análise detalhada dos seus gastos</p>
             </div>
           </div>
+          {insights && (
+            <Button onClick={handleExportAll} variant="default">
+              <FileDown className="mr-2 h-4 w-4" />
+              Exportar Tudo (PDF)
+            </Button>
+          )}
         </div>
 
         {/* Filtros de Período */}
@@ -78,7 +108,11 @@ export default function Analytics({ jid, onBack }: AnalyticsProps) {
         />
 
         {/* Insights Cards */}
-        {insights && <InsightCards insights={insights} />}
+        {insights && (
+          <div ref={insightsRef}>
+            <InsightCards insights={insights} />
+          </div>
+        )}
 
         {/* Empty State quando não há dados no período */}
         {!insights && (
@@ -93,11 +127,17 @@ export default function Analytics({ jid, onBack }: AnalyticsProps) {
         {insights && (
           <>
             <div className="grid gap-6 md:grid-cols-2">
-              <CategoryPieChart data={categorySpending} />
-              <MonthlyComparison data={monthlyComparison} />
+              <div ref={pieChartRef}>
+                <CategoryPieChart data={categorySpending} />
+              </div>
+              <div ref={barChartRef}>
+                <MonthlyComparison data={monthlyComparison} />
+              </div>
             </div>
 
-            <CategoryTrendChart trends={categoryTrends} />
+            <div ref={lineChartRef}>
+              <CategoryTrendChart trends={categoryTrends} />
+            </div>
           </>
         )}
       </div>

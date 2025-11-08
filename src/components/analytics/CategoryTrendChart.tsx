@@ -1,12 +1,16 @@
+import { useRef } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CategoryTrend } from '@/types/analytics';
+import { ChartExportButtons } from './ChartExportButtons';
 
 interface CategoryTrendChartProps {
   trends: CategoryTrend[];
 }
 
 export function CategoryTrendChart({ trends }: CategoryTrendChartProps) {
+  const chartRef = useRef<HTMLDivElement>(null);
+  
   const chartData = trends[0]?.historico.map((_, index) => {
     const point: any = {
       mes: trends[0].historico[index].mes.split(' ')[0].substring(0, 3),
@@ -38,11 +42,19 @@ export function CategoryTrendChart({ trends }: CategoryTrendChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Tendência por Categoria</CardTitle>
-        <CardDescription>Top 5 categorias ao longo do tempo</CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Tendência por Categoria</CardTitle>
+            <CardDescription>Top 5 categorias ao longo do tempo</CardDescription>
+          </div>
+          <ChartExportButtons 
+            chartRef={chartRef} 
+            filename="tendencia-categorias"
+          />
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="h-[400px]">
+        <div ref={chartRef} className="h-[400px]">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />

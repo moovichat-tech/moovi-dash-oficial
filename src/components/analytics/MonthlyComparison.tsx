@@ -1,12 +1,16 @@
+import { useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { MonthlyComparison as MonthlyData } from '@/types/analytics';
+import { ChartExportButtons } from './ChartExportButtons';
 
 interface MonthlyComparisonProps {
   data: MonthlyData[];
 }
 
 export function MonthlyComparison({ data }: MonthlyComparisonProps) {
+  const chartRef = useRef<HTMLDivElement>(null);
+  
   const chartData = data.map(month => ({
     mes: month.mesNome.split(' ')[0].substring(0, 3),
     Receitas: month.receitas,
@@ -25,11 +29,19 @@ export function MonthlyComparison({ data }: MonthlyComparisonProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Comparação Mensal</CardTitle>
-        <CardDescription>Receitas vs Despesas - Últimos 6 meses</CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Comparação Mensal</CardTitle>
+            <CardDescription>Receitas vs Despesas</CardDescription>
+          </div>
+          <ChartExportButtons 
+            chartRef={chartRef} 
+            filename="comparacao-mensal"
+          />
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="h-[400px]">
+        <div ref={chartRef} className="h-[400px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
