@@ -1,4 +1,4 @@
-import { Moon, Sun, LogOut, RefreshCw } from 'lucide-react';
+import { Moon, Sun, LogOut, RefreshCw, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/useTheme';
 import { useDashboard } from '@/hooks/useDashboard';
@@ -13,9 +13,10 @@ import mooviLogo from '@/assets/moovi-logo.png';
 interface DashboardProps {
   jid: string;
   onLogout: () => void;
+  onNavigateToAnalytics?: () => void;
 }
 
-export default function Dashboard({ jid, onLogout }: DashboardProps) {
+export default function Dashboard({ jid, onLogout, onNavigateToAnalytics }: DashboardProps) {
   const { theme, toggleTheme } = useTheme();
   const { data, loading, isNotFound, refresh, sendCommand } = useDashboard(jid);
 
@@ -50,6 +51,17 @@ export default function Dashboard({ jid, onLogout }: DashboardProps) {
           </div>
           
           <div className="flex items-center gap-2">
+            {onNavigateToAnalytics && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onNavigateToAnalytics}
+              >
+                <BarChart3 className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">Analytics</span>
+              </Button>
+            )}
+            
             <Button
               variant="ghost"
               size="icon"
