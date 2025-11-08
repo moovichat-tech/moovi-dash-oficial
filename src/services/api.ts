@@ -3,6 +3,99 @@ import { DashboardData, CommandResponse } from '@/types/dashboard';
 const WEBHOOK_BASE_URL = import.meta.env.VITE_N8N_WEBHOOK_URL || '';
 const DASHBOARD_API_KEY = import.meta.env.VITE_DASHBOARD_API_KEY || '';
 
+// 🔓 MODO DESENVOLVIMENTO - Mudar para false quando implementar autenticação real
+const IS_DEV_BYPASS = true;
+
+// Dados mockados para desenvolvimento
+const MOCK_DASHBOARD_DATA: DashboardData = {
+  jid: 'dev@s.whatsapp.net',
+  saldo_total: 15420.50,
+  receita_mensal: 8500.00,
+  despesa_mensal: 4235.80,
+  transacoes: [
+    {
+      id: '1',
+      data: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+      descricao: 'Salário',
+      valor: 8500.00,
+      tipo: 'receita',
+      categoria: 'Salário',
+      conta_cartao: 'Nubank',
+      recorrente: true,
+    },
+    {
+      id: '2',
+      data: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      descricao: 'Mercado',
+      valor: -450.00,
+      tipo: 'despesa',
+      categoria: 'Alimentação',
+      conta_cartao: 'Cartão Visa',
+      recorrente: false,
+    },
+    {
+      id: '3',
+      data: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+      descricao: 'Freelance',
+      valor: 1200.00,
+      tipo: 'receita',
+      categoria: 'Freelance',
+      conta_cartao: 'Conta Corrente',
+      recorrente: false,
+    },
+    {
+      id: '4',
+      data: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      descricao: 'Netflix',
+      valor: -55.90,
+      tipo: 'despesa',
+      categoria: 'Entretenimento',
+      conta_cartao: 'Cartão Mastercard',
+      recorrente: true,
+    },
+    {
+      id: '5',
+      data: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      descricao: 'Gasolina',
+      valor: -280.00,
+      tipo: 'despesa',
+      categoria: 'Transporte',
+      conta_cartao: 'Nubank',
+      recorrente: false,
+    },
+  ],
+  contas_cartoes: [
+    { id: '1', nome: 'Nubank', tipo: 'conta_corrente', saldo: 5420.50 },
+    { id: '2', nome: 'Cartão Visa', tipo: 'cartao_credito', saldo: 3800.00, limite: 5000.00 },
+  ],
+  categorias: [
+    { id: '1', nome: 'Alimentação', tipo: 'despesa', cor: '#10b981' },
+    { id: '2', nome: 'Transporte', tipo: 'despesa', cor: '#3b82f6' },
+    { id: '3', nome: 'Entretenimento', tipo: 'despesa', cor: '#a855f7' },
+    { id: '4', nome: 'Salário', tipo: 'receita', cor: '#22c55e' },
+    { id: '5', nome: 'Freelance', tipo: 'receita', cor: '#14b8a6' },
+  ],
+  metas: [
+    { id: '1', nome: 'Emergência', valor_alvo: 10000.00, valor_atual: 5420.50, data_alvo: '2025-12-31' },
+  ],
+  recorrencias: [
+    { id: '1', descricao: 'Salário', valor: 8500.00, tipo: 'receita', categoria: 'Salário', frequencia: 'mensal', proxima_data: '2025-12-05', ativo: true },
+    { id: '2', descricao: 'Netflix', valor: 55.90, tipo: 'despesa', categoria: 'Entretenimento', frequencia: 'mensal', proxima_data: '2025-12-15', ativo: true },
+  ],
+  limites: [
+    { categoria: 'Alimentação', limite: 1000.00, gasto_atual: 450.00 },
+    { categoria: 'Transporte', limite: 500.00, gasto_atual: 280.00 },
+  ],
+  historico_30dias: Array.from({ length: 30 }, (_, i) => {
+    const day = 29 - i;
+    return {
+      data: new Date(Date.now() - day * 24 * 60 * 60 * 1000).toISOString(),
+      receitas: Math.random() * 500 + 200,
+      despesas: Math.random() * 400 + 100,
+    };
+  }),
+};
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -22,6 +115,12 @@ export class ApiError extends Error {
  * @throws ApiError com isNotFound=true quando 404
  */
 export async function getDashboardData(jid: string): Promise<DashboardData> {
+  if (IS_DEV_BYPASS) {
+    await new Promise(resolve => setTimeout(resolve, 800));
+    console.log('🔓 DEV MODE: Retornando dados mockados para', jid);
+    return { ...MOCK_DASHBOARD_DATA, jid };
+  }
+
   try {
     const response = await fetch(
       `${WEBHOOK_BASE_URL}/dashboard-data?jid=${encodeURIComponent(jid)}`,
@@ -106,6 +205,12 @@ export async function postDashboardCommand(
  * (implementado em backend/serverless function)
  */
 export async function sendVerificationCode(phoneNumber: string): Promise<void> {
+  if (IS_DEV_BYPASS) {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    console.log('🔓 DEV MODE: Código "enviado" para', phoneNumber);
+    return;
+  }
+
   const response = await fetch('/api/auth/send-code', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -121,6 +226,17 @@ export async function verifyCode(
   phoneNumber: string,
   code: string
 ): Promise<{ jid: string; token: string }> {
+  if (IS_DEV_BYPASS) {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    const mockJid = `${phoneNumber.replace(/\D/g, '')}@s.whatsapp.net`;
+    const mockToken = `dev_token_${Date.now()}`;
+    
+    console.log('🔓 DEV MODE: Login aceito ->', { jid: mockJid, token: mockToken });
+    
+    return { jid: mockJid, token: mockToken };
+  }
+
   const response = await fetch('/api/auth/verify-code', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

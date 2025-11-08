@@ -91,8 +91,22 @@ export function PhoneLogin({ onSuccess }: PhoneLoginProps) {
           <CardDescription>
             {step === 'phone'
               ? 'Digite seu telefone para receber o código de verificação'
-              : 'Digite o código enviado para seu telefone'}
+              : `Digite o código enviado para ${phoneNumber}`}
           </CardDescription>
+          {step === 'phone' && (
+            <div className="mt-3 p-3 bg-amber-100 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-md">
+              <p className="text-xs text-amber-800 dark:text-amber-200 font-medium">
+                🔓 Modo Desenvolvimento: Use qualquer número de telefone
+              </p>
+            </div>
+          )}
+          {step === 'code' && (
+            <div className="mt-3 p-3 bg-amber-100 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-md">
+              <p className="text-xs text-amber-800 dark:text-amber-200 font-medium">
+                🔓 Modo Desenvolvimento: Digite qualquer código (ex: 123456)
+              </p>
+            </div>
+          )}
         </CardHeader>
         <CardContent>
           {step === 'phone' ? (
