@@ -8,6 +8,9 @@ import { FinancialChart } from '@/components/dashboard/FinancialChart';
 import { FloatingActionButton } from '@/components/dashboard/FloatingActionButton';
 import { NotFoundState } from '@/components/dashboard/NotFoundState';
 import { Skeleton } from '@/components/ui/skeleton';
+import { FinancialHealthScore } from '@/components/dashboard/FinancialHealthScore';
+import { GoalsPanel } from '@/components/dashboard/GoalsPanel';
+import { AccountsPanel } from '@/components/dashboard/AccountsPanel';
 import mooviLogo from '@/assets/moovi-logo.png';
 
 interface DashboardProps {
@@ -98,6 +101,11 @@ export default function Dashboard({ jid, onLogout, onNavigateToAnalytics }: Dash
       <main className="max-w-7xl mx-auto px-4 py-6 space-y-6 pb-24">
         {data && (
           <>
+            <FinancialHealthScore
+              receitaMensal={data.receita_mensal}
+              despesaMensal={data.despesa_mensal}
+            />
+
             <BalanceCards
               saldoTotal={data.saldo_total}
               receitaMensal={data.receita_mensal}
@@ -105,6 +113,10 @@ export default function Dashboard({ jid, onLogout, onNavigateToAnalytics }: Dash
             />
 
             <FinancialChart data={data.historico_30dias} />
+
+            <GoalsPanel metas={data.metas} onSendCommand={sendCommand} />
+
+            <AccountsPanel accounts={data.contas_cartoes} budgets={data.limites} />
 
             <TransactionsList transactions={data.transacoes} />
           </>
