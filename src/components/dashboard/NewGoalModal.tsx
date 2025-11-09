@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Dialog,
   DialogContent,
@@ -11,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
+import { tapScale } from '@/lib/animations';
 
 interface NewGoalModalProps {
   open: boolean;
@@ -53,49 +55,90 @@ export function NewGoalModal({ open, onClose, onSendCommand }: NewGoalModalProps
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Nova Meta Financeira 🎯</DialogTitle>
-          <DialogDescription>
-            Use linguagem natural para criar sua meta
-          </DialogDescription>
-        </DialogHeader>
+      <AnimatePresence>
+        {open && (
+          <DialogContent className="sm:max-w-[500px]">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <DialogHeader>
+                <DialogTitle>Nova Meta Financeira 🎯</DialogTitle>
+                <DialogDescription>
+                  Use linguagem natural para criar sua meta
+                </DialogDescription>
+              </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="command">Descreva sua meta</Label>
-            <Textarea
-              id="command"
-              placeholder="Ex: Quero juntar R$5000 para viagem em 6 meses"
-              value={command}
-              onChange={(e) => setCommand(e.target.value)}
-              className="min-h-[100px] resize-none"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground">Sugestões</Label>
-            <div className="flex flex-wrap gap-2">
-              {suggestions.map((sug, i) => (
-                <Button
-                  key={i}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCommand(sug)}
-                  className="text-xs h-auto py-1.5 px-3"
+              <div className="space-y-4">
+                <motion.div 
+                  className="space-y-2"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.1 }}
                 >
-                  {sug}
-                </Button>
-              ))}
-            </div>
-          </div>
+                  <Label htmlFor="command">Descreva sua meta</Label>
+                  <Textarea
+                    id="command"
+                    placeholder="Ex: Quero juntar R$5000 para viagem em 6 meses"
+                    value={command}
+                    onChange={(e) => setCommand(e.target.value)}
+                    className="min-h-[100px] resize-none"
+                  />
+                </motion.div>
 
-          <Button onClick={handleSubmit} disabled={!command.trim() || loading} className="w-full">
-            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Criar Meta
-          </Button>
-        </div>
-      </DialogContent>
+                <motion.div 
+                  className="space-y-2"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <Label className="text-xs text-muted-foreground">Sugestões</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {suggestions.map((sug, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.3 + i * 0.1 }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={tapScale}
+                      >
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCommand(sug)}
+                          className="text-xs h-auto py-1.5 px-3"
+                        >
+                          {sug}
+                        </Button>
+                      </motion.div>
+                    ))}
+                  </div>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={tapScale}
+                >
+                  <Button 
+                    onClick={handleSubmit} 
+                    disabled={!command.trim() || loading} 
+                    className="w-full"
+                  >
+                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Criar Meta
+                  </Button>
+                </motion.div>
+              </div>
+            </motion.div>
+          </DialogContent>
+        )}
+      </AnimatePresence>
     </Dialog>
   );
 }

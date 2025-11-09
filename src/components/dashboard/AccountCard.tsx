@@ -1,9 +1,11 @@
 import { CreditCard, Wallet, PiggyBank, TrendingUp, AlertTriangle } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Account } from '@/types/dashboard';
+import { cardVariants, hoverScale } from '@/lib/animations';
 
 interface AccountCardProps {
   account: Account;
@@ -49,31 +51,62 @@ export function AccountCard({ account }: AccountCardProps) {
     return labels[tipo];
   };
 
+  const isCritical = usagePercent >= 90;
+
   return (
-    <Card className="h-full">
+    <motion.div
+      variants={cardVariants}
+      whileHover={hoverScale}
+      whileTap={{ scale: 0.98 }}
+      className="h-full"
+    >
+      <Card className="h-full">
       <CardHeader>
         <div className="flex items-start gap-3">
-          <div className="p-2 rounded-lg bg-primary/10">
+          <motion.div 
+            className="p-2 rounded-lg bg-primary/10"
+            initial={{ rotate: -180, scale: 0 }}
+            animate={{ rotate: 0, scale: 1 }}
+            transition={{
+              type: 'spring',
+              stiffness: 200,
+              damping: 15,
+              delay: 0.1,
+            }}
+          >
             <Icon className="h-5 w-5 text-primary" />
-          </div>
-          <div className="flex-1 min-w-0">
+          </motion.div>
+          
+          <motion.div 
+            className="flex-1 min-w-0"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+          >
             <CardTitle className="text-base truncate">{account.nome}</CardTitle>
             <CardDescription className="mt-0.5">{getTipoLabel(account.tipo)}</CardDescription>
-          </div>
+          </motion.div>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        {/* Saldo */}
-        <div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
           <p className="text-2xl font-bold">{formatCurrency(account.saldo)}</p>
           <p className="text-xs text-muted-foreground">Saldo atual</p>
-        </div>
+        </motion.div>
 
-        {/* Limite (apenas para cartões) */}
         {account.limite && (
           <>
             <Separator />
-            <div className="space-y-2">
+            <motion.div 
+              className="space-y-2"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+            >
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Limite disponível</span>
                 <span className={`font-semibold ${statusColor}`}>
@@ -85,18 +118,35 @@ export function AccountCard({ account }: AccountCardProps) {
 
               <p className="text-xs text-muted-foreground">{usagePercent.toFixed(1)}% utilizado</p>
 
-              {usagePercent >= 90 && (
-                <Alert variant="destructive" className="py-2">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription className="text-xs">
-                    Atenção! Você está próximo do limite.
-                  </AlertDescription>
-                </Alert>
+              {isCritical && (
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ 
+                    opacity: 1, 
+                    y: 0,
+                    scale: [1, 1.02, 1],
+                  }}
+                  transition={{
+                    opacity: { duration: 0.3 },
+                    scale: {
+                      repeat: Infinity,
+                      duration: 2,
+                    }
+                  }}
+                >
+                  <Alert variant="destructive" className="py-2">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription className="text-xs">
+                      Atenção! Você está próximo do limite.
+                    </AlertDescription>
+                  </Alert>
+                </motion.div>
               )}
-            </div>
+            </motion.div>
           </>
         )}
       </CardContent>
     </Card>
+    </motion.div>
   );
 }
