@@ -4,7 +4,7 @@ const WEBHOOK_BASE_URL = import.meta.env.VITE_N8N_WEBHOOK_URL || '';
 const DASHBOARD_API_KEY = import.meta.env.VITE_DASHBOARD_API_KEY || '';
 
 // 🔓 MODO DESENVOLVIMENTO - Mudar para false quando implementar autenticação real
-const IS_DEV_BYPASS = true;
+const IS_DEV_BYPASS = false;
 
 // Dados mockados para desenvolvimento
 const MOCK_DASHBOARD_DATA: DashboardData = {
