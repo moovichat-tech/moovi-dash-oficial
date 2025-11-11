@@ -12,21 +12,50 @@ interface PhoneLoginProps {
   onSuccess: (jid: string, token: string) => void;
 }
 
+// Função para formatar telefone brasileiro com máscara
+const formatPhoneNumber = (value: string): string => {
+  // Remove tudo exceto números
+  const numbers = value.replace(/\D/g, '');
+  
+  // Limita a 11 dígitos (DDD + número)
+  const limited = numbers.slice(0, 11);
+  
+  // Aplica máscara conforme o tamanho
+  if (limited.length <= 2) {
+    return `+55 (${limited}`;
+  } else if (limited.length <= 6) {
+    return `+55 (${limited.slice(0, 2)}) ${limited.slice(2)}`;
+  } else if (limited.length <= 10) {
+    // Telefone fixo: (XX) XXXX-XXXX
+    return `+55 (${limited.slice(0, 2)}) ${limited.slice(2, 6)}-${limited.slice(6)}`;
+  } else {
+    // Celular: (XX) XXXXX-XXXX
+    return `+55 (${limited.slice(0, 2)}) ${limited.slice(2, 7)}-${limited.slice(7, 11)}`;
+  }
+};
+
+// Função para extrair apenas os números (sem +55)
+const extractPhoneNumbers = (formatted: string): string => {
+  return formatted.replace(/\D/g, '');
+};
+
 export function PhoneLogin({ onSuccess }: PhoneLoginProps) {
   const [step, setStep] = useState<'phone' | 'code'>('phone');
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('+55 (');
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validação básica
-    const cleanPhone = phoneNumber.replace(/\D/g, '');
-    if (cleanPhone.length < 10) {
+    // Extrair apenas números (sem o +55)
+    const phoneOnly = extractPhoneNumbers(phoneNumber);
+    
+    // Validação: deve ter 10 (fixo) ou 11 (celular) dígitos
+    if (phoneOnly.length < 10 || phoneOnly.length > 11) {
       toast({
         title: 'Telefone inválido',
-        description: 'Digite um número de telefone válido.',
+        description: 'Digite um número de telefone válido com DDD.',
         variant: 'destructive',
       });
       return;
@@ -34,11 +63,12 @@ export function PhoneLogin({ onSuccess }: PhoneLoginProps) {
 
     setLoading(true);
     try {
-      await sendVerificationCode(phoneNumber);
+      // Envia apenas os números (DDD + número)
+      await sendVerificationCode(phoneOnly);
       setStep('code');
       toast({
         title: 'Código enviado',
-        description: 'Verifique seu telefone para o código de verificação.',
+        description: 'Verifique seu WhatsApp para o código de verificação.',
       });
     } catch (error) {
       toast({
@@ -65,7 +95,9 @@ export function PhoneLogin({ onSuccess }: PhoneLoginProps) {
 
     setLoading(true);
     try {
-      const { jid, token } = await verifyCode(phoneNumber, code);
+      // Usar apenas os números (sem +55)
+      const phoneOnly = extractPhoneNumbers(phoneNumber);
+      const { jid, token } = await verifyCode(phoneOnly, code);
       toast({
         title: 'Login bem-sucedido',
         description: 'Bem-vindo ao Moovi.dash!',
@@ -93,20 +125,6 @@ export function PhoneLogin({ onSuccess }: PhoneLoginProps) {
               ? 'Digite seu telefone para receber o código de verificação'
               : `Digite o código enviado para ${phoneNumber}`}
           </CardDescription>
-          {step === 'phone' && (
-            <div className="mt-3 p-3 bg-amber-100 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-md">
-              <p className="text-xs text-amber-800 dark:text-amber-200 font-medium">
-                🔓 Modo Desenvolvimento: Use qualquer número de telefone
-              </p>
-            </div>
-          )}
-          {step === 'code' && (
-            <div className="mt-3 p-3 bg-amber-100 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-md">
-              <p className="text-xs text-amber-800 dark:text-amber-200 font-medium">
-                🔓 Modo Desenvolvimento: Digite qualquer código (ex: 123456)
-              </p>
-            </div>
-          )}
         </CardHeader>
         <CardContent>
           {step === 'phone' ? (
@@ -118,11 +136,21 @@ export function PhoneLogin({ onSuccess }: PhoneLoginProps) {
                   <Input
                     id="phone"
                     type="tel"
-                    placeholder="+55 (11) 98765-4321"
+                    placeholder="+55 (62) 99150-9945"
                     value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    onChange={(e) => {
+                      const formatted = formatPhoneNumber(e.target.value);
+                      setPhoneNumber(formatted);
+                    }}
+                    onKeyDown={(e) => {
+                      // Impedir apagar o prefixo +55
+                      if (e.key === 'Backspace' && phoneNumber.length <= 5) {
+                        e.preventDefault();
+                      }
+                    }}
                     className="pl-10"
                     disabled={loading}
+                    maxLength={19}
                   />
                 </div>
               </div>
