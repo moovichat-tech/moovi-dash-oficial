@@ -112,13 +112,13 @@ export default function Dashboard({ jid, onLogout, onNavigateToAnalytics }: Dash
               despesaMensal={data.despesa_mensal}
             />
 
-            <FinancialChart data={data.historico_30dias} />
+            <FinancialChart data={data.historico_30dias || []} />
 
-            <GoalsPanel metas={data.metas} onSendCommand={sendCommand} />
+            <GoalsPanel metas={data.metas || []} onSendCommand={sendCommand} />
 
-            <AccountsPanel accounts={data.contas_cartoes} budgets={data.limites} />
+            <AccountsPanel accounts={data.contas_cartoes || []} budgets={data.limites || []} />
 
-            <TransactionsList transactions={data.transacoes} />
+            <TransactionsList transactions={data.transacoes || []} />
           </>
         )}
       </main>

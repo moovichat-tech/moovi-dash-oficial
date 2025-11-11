@@ -149,19 +149,34 @@ export async function getDashboardData(jid: string): Promise<DashboardData> {
     }
 
     const responseData = await response.json();
-    // Extrair dados_finais se existir, senão usar responseData diretamente
-    const dadosFinais = responseData.dados_finais || responseData;
-    
-    // Se dados_finais for null ou não tiver as propriedades esperadas, retornar estrutura vazia
-    if (!dadosFinais || dadosFinais === null || typeof dadosFinais !== 'object') {
+
+    // Preferir dados dentro de `dados_finais` quando existir; tratar null como não encontrado
+    const hasNested = responseData && Object.prototype.hasOwnProperty.call(responseData, 'dados_finais');
+    const raw = hasNested ? responseData.dados_finais : responseData;
+
+    if (raw == null) {
       throw new ApiError(
         'Dados não encontrados. Configure seu dashboard primeiro.',
         404,
         true
       );
     }
-    
-    const data: DashboardData = dadosFinais;
+
+    // Normalizar estrutura e garantir arrays vazios quando ausentes
+    const data: DashboardData = {
+      jid,
+      saldo_total: raw.saldo_total ?? 0,
+      receita_mensal: raw.receita_mensal ?? 0,
+      despesa_mensal: raw.despesa_mensal ?? 0,
+      transacoes: Array.isArray(raw.transacoes) ? raw.transacoes : [],
+      contas_cartoes: Array.isArray(raw.contas_cartoes) ? raw.contas_cartoes : [],
+      categorias: Array.isArray(raw.categorias) ? raw.categorias : [],
+      metas: Array.isArray(raw.metas) ? raw.metas : [],
+      recorrencias: Array.isArray(raw.recorrencias) ? raw.recorrencias : [],
+      limites: Array.isArray(raw.limites) ? raw.limites : [],
+      historico_30dias: Array.isArray(raw.historico_30dias) ? raw.historico_30dias : [],
+    };
+
     return data;
   } catch (error) {
     if (error instanceof ApiError) {
