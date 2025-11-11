@@ -3,8 +3,9 @@ import { DashboardData, CommandResponse } from '@/types/dashboard';
 const WEBHOOK_BASE_URL = import.meta.env.VITE_N8N_WEBHOOK_URL || '';
 const DASHBOARD_API_KEY = import.meta.env.VITE_DASHBOARD_API_KEY || '';
 
-// 🔓 MODO DESENVOLVIMENTO - Mudar para false quando implementar autenticação real
-const IS_DEV_BYPASS = false;
+// 🔓 MODO DESENVOLVIMENTO - Controle separado para autenticação e dados
+const IS_DEV_BYPASS_AUTH = false;  // Autenticação via n8n (WhatsApp)
+const IS_DEV_BYPASS_DATA = false;  // Dados via n8n
 
 // Dados mockados para desenvolvimento
 const MOCK_DASHBOARD_DATA: DashboardData = {
@@ -115,7 +116,7 @@ export class ApiError extends Error {
  * @throws ApiError com isNotFound=true quando 404
  */
 export async function getDashboardData(jid: string): Promise<DashboardData> {
-  if (IS_DEV_BYPASS) {
+  if (IS_DEV_BYPASS_DATA) {
     await new Promise(resolve => setTimeout(resolve, 800));
     console.log('🔓 DEV MODE: Retornando dados mockados para', jid);
     return { ...MOCK_DASHBOARD_DATA, jid };
@@ -236,32 +237,59 @@ export async function postDashboardCommand(
 }
 
 /**
- * Serviço de exemplo para proxy de autenticação Twilio
- * (implementado em backend/serverless function)
+ * Envia código de verificação via WhatsApp através do n8n
+ * POST /auth/send-code
+ * Header: Authorization
+ * Body: { "telefone": "62992509945" }
  */
 export async function sendVerificationCode(phoneNumber: string): Promise<void> {
-  if (IS_DEV_BYPASS) {
+  if (IS_DEV_BYPASS_AUTH) {
     await new Promise(resolve => setTimeout(resolve, 500));
     console.log('🔓 DEV MODE: Código "enviado" para', phoneNumber);
     return;
   }
 
-  const response = await fetch('/api/auth/send-code', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phoneNumber }),
-  });
+  try {
+    const response = await fetch(
+      `${WEBHOOK_BASE_URL}/auth/send-code`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': DASHBOARD_API_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ telefone: phoneNumber }),
+      }
+    );
 
-  if (!response.ok) {
-    throw new ApiError('Erro ao enviar código de verificação');
+    if (!response.ok) {
+      throw new ApiError(
+        'Erro ao enviar código de verificação',
+        response.status
+      );
+    }
+
+    console.log('✅ Código enviado via WhatsApp para', phoneNumber);
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    throw new ApiError('Erro de conexão ao enviar código');
   }
 }
 
+/**
+ * Verifica código de verificação via n8n
+ * POST /auth/verify-code
+ * Header: Authorization
+ * Body: { "telefone": "62992509945", "code": "123456" }
+ * Resposta: { "success": true, "jid": "5562992509945@s.whatsapp.net", ... }
+ */
 export async function verifyCode(
   phoneNumber: string,
   code: string
 ): Promise<{ jid: string; token: string }> {
-  if (IS_DEV_BYPASS) {
+  if (IS_DEV_BYPASS_AUTH) {
     await new Promise(resolve => setTimeout(resolve, 500));
     
     const mockJid = `${phoneNumber.replace(/\D/g, '')}@s.whatsapp.net`;
@@ -272,15 +300,47 @@ export async function verifyCode(
     return { jid: mockJid, token: mockToken };
   }
 
-  const response = await fetch('/api/auth/verify-code', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phoneNumber, code }),
-  });
+  try {
+    const response = await fetch(
+      `${WEBHOOK_BASE_URL}/auth/verify-code`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': DASHBOARD_API_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ telefone: phoneNumber, code }),
+      }
+    );
 
-  if (!response.ok) {
-    throw new ApiError('Código inválido ou expirado');
+    if (response.status === 401) {
+      throw new ApiError('Código inválido ou expirado', 401);
+    }
+
+    if (!response.ok) {
+      throw new ApiError(
+        `Erro ao verificar código: ${response.statusText}`,
+        response.status
+      );
+    }
+
+    const data = await response.json();
+    
+    // Validar se a resposta tem os campos esperados
+    if (!data.jid) {
+      throw new ApiError('Resposta inválida do servidor');
+    }
+
+    console.log('✅ Login bem-sucedido:', data.jid);
+    
+    return {
+      jid: data.jid,
+      token: data.token || `auth_${Date.now()}`, // Fallback se token não vier
+    };
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    throw new ApiError('Erro de conexão ao verificar código');
   }
-
-  return response.json();
 }
