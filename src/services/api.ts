@@ -127,7 +127,7 @@ export async function getDashboardData(jid: string): Promise<DashboardData> {
       {
         method: 'GET',
         headers: {
-          'chave-dashboard-data': DASHBOARD_API_KEY,
+          'Authorization': DASHBOARD_API_KEY,
           'Content-Type': 'application/json',
         },
       }
@@ -148,7 +148,9 @@ export async function getDashboardData(jid: string): Promise<DashboardData> {
       );
     }
 
-    const data: DashboardData = await response.json();
+    const responseData = await response.json();
+    // Extrair dados_finais se existir, senão usar responseData diretamente
+    const data: DashboardData = responseData.dados_finais || responseData;
     return data;
   } catch (error) {
     if (error instanceof ApiError) {
@@ -176,12 +178,19 @@ export async function postDashboardCommand(
       {
         method: 'POST',
         headers: {
-          'chave-dashboard-data': DASHBOARD_API_KEY,
+          'Authorization': DASHBOARD_API_KEY,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ command }),
       }
     );
+
+    if (response.status === 409) {
+      throw new ApiError(
+        'O assistente está ocupado. Tente novamente em 5 segundos.',
+        409
+      );
+    }
 
     if (!response.ok) {
       throw new ApiError(
