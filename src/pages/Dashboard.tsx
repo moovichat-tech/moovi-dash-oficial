@@ -24,7 +24,7 @@ export default function Dashboard({ jid, onLogout, onNavigateToAnalytics }: Dash
   const { data, loading, isNotFound, refresh, sendCommand } = useDashboard(jid);
 
   if (isNotFound) {
-    return <NotFoundState />;
+    return <NotFoundState onLogout={onLogout} />;
   }
 
   if (loading && !data) {
