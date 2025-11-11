@@ -14,11 +14,12 @@ interface AccountsPanelProps {
 }
 
 export function AccountsPanel({ accounts, budgets }: AccountsPanelProps) {
-  const totalBalance = accounts.reduce((sum, a) => sum + a.saldo, 0);
-  const totalLimits = accounts
+  const safeAccounts = accounts || [];
+  const totalBalance = safeAccounts.reduce((sum, a) => sum + a.saldo, 0);
+  const totalLimits = safeAccounts
     .filter((a) => a.limite)
     .reduce((sum, a) => sum + (a.limite || 0), 0);
-  const totalUsed = accounts
+  const totalUsed = safeAccounts
     .filter((a) => a.limite)
     .reduce((sum, a) => sum + Math.abs(a.saldo), 0);
   const globalUsage = totalLimits > 0 ? (totalUsed / totalLimits) * 100 : 0;
@@ -102,7 +103,7 @@ export function AccountsPanel({ accounts, budgets }: AccountsPanelProps) {
           </motion.div>
         </div>
         
-        {accounts.length === 0 ? (
+        {safeAccounts.length === 0 ? (
           <motion.div
             className="text-center py-12"
             initial={{ opacity: 0 }}
@@ -129,7 +130,7 @@ export function AccountsPanel({ accounts, budgets }: AccountsPanelProps) {
             initial="hidden"
             animate="visible"
           >
-            {accounts.map((account) => (
+            {safeAccounts.map((account) => (
               <AccountCard key={account.id} account={account} />
             ))}
           </motion.div>
@@ -144,7 +145,7 @@ export function AccountsPanel({ accounts, budgets }: AccountsPanelProps) {
           initial="hidden"
           animate="visible"
         >
-          {budgets.map((budget) => (
+          {(budgets || []).map((budget) => (
             <LimitCard key={budget.categoria} budget={budget} />
           ))}
         </motion.div>

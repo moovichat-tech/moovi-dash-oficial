@@ -43,11 +43,13 @@ export function TransactionsList({ transactions }: TransactionsListProps) {
 
   // Extrair categorias únicas
   const uniqueCategories = useMemo(() => {
+    if (!transactions || transactions.length === 0) return [];
     return Array.from(new Set(transactions.map((t) => t.categoria))).sort();
   }, [transactions]);
 
   // Filtrar transações
   const filteredTransactions = useMemo(() => {
+    if (!transactions || transactions.length === 0) return [];
     return transactions
       .filter((t) => {
         // Filtro de busca textual

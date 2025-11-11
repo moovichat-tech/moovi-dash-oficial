@@ -150,7 +150,18 @@ export async function getDashboardData(jid: string): Promise<DashboardData> {
 
     const responseData = await response.json();
     // Extrair dados_finais se existir, senão usar responseData diretamente
-    const data: DashboardData = responseData.dados_finais || responseData;
+    const dadosFinais = responseData.dados_finais || responseData;
+    
+    // Se dados_finais for null ou não tiver as propriedades esperadas, retornar estrutura vazia
+    if (!dadosFinais || dadosFinais === null || typeof dadosFinais !== 'object') {
+      throw new ApiError(
+        'Dados não encontrados. Configure seu dashboard primeiro.',
+        404,
+        true
+      );
+    }
+    
+    const data: DashboardData = dadosFinais;
     return data;
   } catch (error) {
     if (error instanceof ApiError) {

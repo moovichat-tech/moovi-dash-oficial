@@ -10,7 +10,7 @@ interface FinancialChartProps {
 }
 
 export function FinancialChart({ data }: FinancialChartProps) {
-  const chartData = data.map((item) => ({
+  const chartData = (data || []).map((item) => ({
     data: new Date(item.data).toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: 'short',

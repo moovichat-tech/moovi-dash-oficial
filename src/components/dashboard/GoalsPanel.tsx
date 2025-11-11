@@ -32,8 +32,8 @@ export function GoalsPanel({ metas, onSendCommand }: GoalsPanelProps) {
                 <CardTitle>Metas Financeiras</CardTitle>
               </div>
               <CardDescription className="mt-1">
-                {metas.length} meta{metas.length !== 1 ? 's' : ''} cadastrada
-                {metas.length !== 1 ? 's' : ''}
+                {metas?.length || 0} meta{(metas?.length || 0) !== 1 ? 's' : ''} cadastrada
+                {(metas?.length || 0) !== 1 ? 's' : ''}
               </CardDescription>
             </div>
             
@@ -49,7 +49,7 @@ export function GoalsPanel({ metas, onSendCommand }: GoalsPanelProps) {
           </div>
         </CardHeader>
         <CardContent>
-          {metas.length === 0 ? (
+          {!metas || metas.length === 0 ? (
             <motion.div 
               className="text-center py-12 px-4"
               initial={{ opacity: 0, y: 20 }}
