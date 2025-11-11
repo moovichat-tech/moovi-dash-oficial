@@ -14,29 +14,34 @@ interface PhoneLoginProps {
 
 // Função para formatar telefone brasileiro com máscara
 const formatPhoneNumber = (value: string): string => {
-  // Remove tudo exceto números
-  const numbers = value.replace(/\D/g, '');
+  // Remove o prefixo +55 primeiro, DEPOIS extrai números
+  let numbers = value.replace(/^\+55\s*\(?\s*/, '').replace(/\D/g, '');
   
-  // Limita a 11 dígitos (DDD + número)
-  const limited = numbers.slice(0, 11);
+  // Limita a 11 dígitos (DDD + número, SEM incluir o 55 do país)
+  numbers = numbers.slice(0, 11);
   
   // Aplica máscara conforme o tamanho
-  if (limited.length <= 2) {
-    return `+55 (${limited}`;
-  } else if (limited.length <= 6) {
-    return `+55 (${limited.slice(0, 2)}) ${limited.slice(2)}`;
-  } else if (limited.length <= 10) {
+  if (numbers.length === 0) {
+    return '+55 (';
+  } else if (numbers.length <= 2) {
+    return `+55 (${numbers}`;
+  } else if (numbers.length <= 6) {
+    return `+55 (${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
+  } else if (numbers.length <= 10) {
     // Telefone fixo: (XX) XXXX-XXXX
-    return `+55 (${limited.slice(0, 2)}) ${limited.slice(2, 6)}-${limited.slice(6)}`;
+    return `+55 (${numbers.slice(0, 2)}) ${numbers.slice(2, 6)}-${numbers.slice(6)}`;
   } else {
     // Celular: (XX) XXXXX-XXXX
-    return `+55 (${limited.slice(0, 2)}) ${limited.slice(2, 7)}-${limited.slice(7, 11)}`;
+    return `+55 (${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
   }
 };
 
-// Função para extrair apenas os números (sem +55)
+// Função para extrair apenas os números (inclui 55 no início)
 const extractPhoneNumbers = (formatted: string): string => {
-  return formatted.replace(/\D/g, '');
+  // Remove o prefixo +55 e extrai apenas DDD+número
+  const dddAndNumber = formatted.replace(/^\+55\s*\(?\s*/, '').replace(/\D/g, '');
+  // Retorna 55 + DDD + número completo
+  return '55' + dddAndNumber;
 };
 
 export function PhoneLogin({ onSuccess }: PhoneLoginProps) {
@@ -48,11 +53,11 @@ export function PhoneLogin({ onSuccess }: PhoneLoginProps) {
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Extrair apenas números (sem o +55)
+    // Extrair números com código do país (55 + DDD + número)
     const phoneOnly = extractPhoneNumbers(phoneNumber);
     
-    // Validação: deve ter 10 (fixo) ou 11 (celular) dígitos
-    if (phoneOnly.length < 10 || phoneOnly.length > 11) {
+    // Validação: deve ter 12 (fixo: 55+10) ou 13 (celular: 55+11) dígitos
+    if (phoneOnly.length < 12 || phoneOnly.length > 13) {
       toast({
         title: 'Telefone inválido',
         description: 'Digite um número de telefone válido com DDD.',
