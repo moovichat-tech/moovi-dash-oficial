@@ -189,19 +189,19 @@ export async function getDashboardData(phoneNumber: string, jid?: string): Promi
 
 /**
  * Envia um comando em linguagem natural para o backend processar
- * POST /dashboard-command?jid=[JID]
+ * POST /dashboard-command?telefone=[TELEFONE]
  * Header: chave-dashboard-data
  * Body: { "command": "texto do usuário" }
  * 
  * Após sucesso (200), deve-se chamar getDashboardData() para atualizar a UI
  */
 export async function postDashboardCommand(
-  jid: string,
+  phoneNumber: string,
   command: string
 ): Promise<CommandResponse> {
   try {
     const response = await fetch(
-      `${WEBHOOK_BASE_URL}/dashboard-command?jid=${encodeURIComponent(jid)}`,
+      `${WEBHOOK_BASE_URL}/dashboard-command?telefone=${encodeURIComponent(phoneNumber)}`,
       {
         method: 'POST',
         headers: {

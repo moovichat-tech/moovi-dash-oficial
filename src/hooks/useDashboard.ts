@@ -44,10 +44,10 @@ export function useDashboard(jid: string | null, phoneNumber: string | null) {
 
   const sendCommand = useCallback(
     async (command: string) => {
-      if (!jid) return;
+      if (!phoneNumber) return;
 
       try {
-        await postDashboardCommand(jid, command);
+        await postDashboardCommand(phoneNumber, command);
         // Após sucesso, recarregar todos os dados
         await loadDashboard();
         toast({
@@ -63,7 +63,7 @@ export function useDashboard(jid: string | null, phoneNumber: string | null) {
         throw err;
       }
     },
-    [jid, loadDashboard]
+    [phoneNumber, loadDashboard]
   );
 
   return {
