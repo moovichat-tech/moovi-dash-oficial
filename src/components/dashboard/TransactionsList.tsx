@@ -54,8 +54,8 @@ export function TransactionsList({ transactions }: TransactionsListProps) {
       .filter((t) => {
         // Filtro de busca textual
         const matchesSearch =
-          t.descricao.toLowerCase().includes(filterState.search.toLowerCase()) ||
-          t.categoria.toLowerCase().includes(filterState.search.toLowerCase());
+          (t.descricao || '').toLowerCase().includes(filterState.search.toLowerCase()) ||
+          (t.categoria || '').toLowerCase().includes(filterState.search.toLowerCase());
 
         // Filtro de data
         const transactionDate = new Date(t.data);
