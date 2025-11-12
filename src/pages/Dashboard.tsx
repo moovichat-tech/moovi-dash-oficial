@@ -15,13 +15,14 @@ import mooviLogo from '@/assets/moovi-logo.png';
 
 interface DashboardProps {
   jid: string;
+  phoneNumber: string;
   onLogout: () => void;
   onNavigateToAnalytics?: () => void;
 }
 
-export default function Dashboard({ jid, onLogout, onNavigateToAnalytics }: DashboardProps) {
+export default function Dashboard({ jid, phoneNumber, onLogout, onNavigateToAnalytics }: DashboardProps) {
   const { theme, toggleTheme } = useTheme();
-  const { data, loading, isNotFound, refresh, sendCommand } = useDashboard(jid);
+  const { data, loading, isNotFound, refresh, sendCommand } = useDashboard(jid, phoneNumber);
 
   if (isNotFound) {
     return <NotFoundState onLogout={onLogout} />;

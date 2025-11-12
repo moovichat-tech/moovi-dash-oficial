@@ -9,7 +9,7 @@ import { Loader2, Phone, ShieldCheck } from "lucide-react";
 import mooviLogo from "@/assets/moovi-logo.png";
 
 interface PhoneLoginProps {
-  onSuccess: (jid: string, token: string) => void;
+  onSuccess: (jid: string, token: string, phoneNumber: string) => void;
 }
 
 // Função para formatar telefone brasileiro com máscara
@@ -107,7 +107,7 @@ export function PhoneLogin({ onSuccess }: PhoneLoginProps) {
         title: "Login bem-sucedido",
         description: "Bem-vindo ao Moovi.dash!",
       });
-      onSuccess(jid, token);
+      onSuccess(jid, token, phoneOnly);
     } catch (error) {
       toast({
         title: "Código inválido",

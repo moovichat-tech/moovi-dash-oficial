@@ -14,11 +14,12 @@ import { PeriodFilter } from '@/types/analytics';
 
 interface AnalyticsProps {
   jid: string;
+  phoneNumber: string;
   onBack: () => void;
 }
 
-export default function Analytics({ jid, onBack }: AnalyticsProps) {
-  const { data, loading } = useDashboard(jid);
+export default function Analytics({ jid, phoneNumber, onBack }: AnalyticsProps) {
+  const { data, loading } = useDashboard(jid, phoneNumber);
   const { exportMultipleToPDF } = useChartExport();
   
   // Estado do filtro de período (default: últimos 6 meses)

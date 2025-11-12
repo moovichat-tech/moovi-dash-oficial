@@ -109,22 +109,22 @@ export class ApiError extends Error {
 }
 
 /**
- * Busca todos os dados do dashboard para o JID do usuário
- * GET /dashboard-data?jid=[JID]
+ * Busca todos os dados do dashboard para o telefone do usuário
+ * GET /dashboard-data?telefone=[TELEFONE]
  * Header: chave-dashboard-data
  * 
  * @throws ApiError com isNotFound=true quando 404
  */
-export async function getDashboardData(jid: string): Promise<DashboardData> {
+export async function getDashboardData(phoneNumber: string, jid?: string): Promise<DashboardData> {
   if (IS_DEV_BYPASS_DATA) {
     await new Promise(resolve => setTimeout(resolve, 800));
-    console.log('🔓 DEV MODE: Retornando dados mockados para', jid);
-    return { ...MOCK_DASHBOARD_DATA, jid };
+    console.log('🔓 DEV MODE: Retornando dados mockados para', phoneNumber);
+    return { ...MOCK_DASHBOARD_DATA, jid: jid || phoneNumber };
   }
 
   try {
     const response = await fetch(
-      `${WEBHOOK_BASE_URL}/dashboard-data?jid=${encodeURIComponent(jid)}`,
+      `${WEBHOOK_BASE_URL}/dashboard-data?telefone=${encodeURIComponent(phoneNumber)}`,
       {
         method: 'GET',
         headers: {
@@ -165,7 +165,7 @@ export async function getDashboardData(jid: string): Promise<DashboardData> {
 
     // Normalizar estrutura e garantir arrays vazios quando ausentes
     const data: DashboardData = {
-      jid,
+      jid: jid || phoneNumber,
       saldo_total: raw.saldo_total ?? 0,
       receita_mensal: raw.receita_mensal ?? 0,
       despesa_mensal: raw.despesa_mensal ?? 0,

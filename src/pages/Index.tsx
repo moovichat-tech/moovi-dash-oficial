@@ -8,6 +8,7 @@ const AUTH_STORAGE_KEY = 'moovi-auth';
 interface AuthData {
   jid: string;
   token: string;
+  phoneNumber: string;
 }
 
 type ViewType = 'dashboard' | 'analytics';
@@ -27,8 +28,8 @@ const Index = () => {
     }
   }, [auth]);
 
-  const handleLoginSuccess = (jid: string, token: string) => {
-    setAuth({ jid, token });
+  const handleLoginSuccess = (jid: string, token: string, phoneNumber: string) => {
+    setAuth({ jid, token, phoneNumber });
   };
 
   const handleLogout = () => {
@@ -44,6 +45,7 @@ const Index = () => {
     return (
       <Analytics 
         jid={auth.jid}
+        phoneNumber={auth.phoneNumber}
         onBack={() => setCurrentView('dashboard')}
       />
     );
@@ -51,7 +53,8 @@ const Index = () => {
 
   return (
     <Dashboard 
-      jid={auth.jid} 
+      jid={auth.jid}
+      phoneNumber={auth.phoneNumber}
       onLogout={handleLogout}
       onNavigateToAnalytics={() => setCurrentView('analytics')}
     />

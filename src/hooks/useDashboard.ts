@@ -3,14 +3,14 @@ import { DashboardData } from '@/types/dashboard';
 import { getDashboardData, postDashboardCommand, ApiError } from '@/services/api';
 import { toast } from '@/hooks/use-toast';
 
-export function useDashboard(jid: string | null) {
+export function useDashboard(jid: string | null, phoneNumber: string | null) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isNotFound, setIsNotFound] = useState(false);
 
   const loadDashboard = useCallback(async () => {
-    if (!jid) {
+    if (!phoneNumber) {
       setLoading(false);
       return;
     }
@@ -19,7 +19,7 @@ export function useDashboard(jid: string | null) {
       setLoading(true);
       setError(null);
       setIsNotFound(false);
-      const dashboardData = await getDashboardData(jid);
+      const dashboardData = await getDashboardData(phoneNumber, jid || undefined);
       setData(dashboardData);
     } catch (err) {
       if (err instanceof ApiError && err.isNotFound) {
@@ -36,7 +36,7 @@ export function useDashboard(jid: string | null) {
     } finally {
       setLoading(false);
     }
-  }, [jid]);
+  }, [jid, phoneNumber]);
 
   useEffect(() => {
     loadDashboard();
