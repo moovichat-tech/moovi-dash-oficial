@@ -112,39 +112,31 @@ export class ApiError extends Error {
  * Processa dados brutos da API e calcula valores agregados
  */
 function processRawDashboardData(raw: any, jid: string): DashboardData {
-  // A. Variáveis de Data
-  const hoje = new Date();
-  const inicioDoMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-  const inicio30DiasAtras = new Date();
-  inicio30DiasAtras.setDate(hoje.getDate() - 30);
-
-  // Garantir arrays vazios
-  const transacoes: any[] = Array.isArray(raw.transacoes) ? raw.transacoes : [];
+  // ✅ Usar array pré-filtrado pela API (sem filtros de data)
+  const transacoesDoPeriodo: any[] = Array.isArray(raw.transacoes_do_periodo) 
+    ? raw.transacoes_do_periodo 
+    : [];
   const limitesRaw = Array.isArray(raw.limites) ? raw.limites : [];
 
-  // B. Cálculos Principais
+  // ✅ Usar saldo total da API
+  const saldoTotal = raw.saldo_total_geral ?? 0;
 
-  // 1. Receitas do Mês
-  const receitaMensal = transacoes
-    .filter(t => new Date(t.data) >= inicioDoMes && t.valor > 0)
+  // ✅ Calcular receitas e despesas do período (SEM FILTRO DE DATA)
+  const receitaMensal = transacoesDoPeriodo
+    .filter(t => t.valor > 0)
     .reduce((acc, t) => acc + t.valor, 0);
 
-  // 2. Despesas do Mês (valor absoluto)
   const despesaMensal = Math.abs(
-    transacoes
-      .filter(t => new Date(t.data) >= inicioDoMes && t.valor < 0)
+    transacoesDoPeriodo
+      .filter(t => t.valor < 0)
       .reduce((acc, t) => acc + t.valor, 0)
   );
 
-  // 3. Saldo Total (todas as transações)
-  const saldoTotal = transacoes.reduce((acc, t) => acc + t.valor, 0);
-
-  // C. Limites por Categoria (com gasto_atual calculado)
+  // ✅ Limites por Categoria (sem filtro de data)
   const limites = limitesRaw.map((limite: any) => {
-    const gastoCategoriaMes = transacoes
+    const gastoCategoriaMes = transacoesDoPeriodo
       .filter(t => 
         t.categoria === limite.categoria && 
-        new Date(t.data) >= inicioDoMes && 
         t.valor < 0
       )
       .reduce((acc, t) => acc + Math.abs(t.valor), 0);
@@ -156,42 +148,32 @@ function processRawDashboardData(raw: any, jid: string): DashboardData {
     };
   });
 
-  // D. Histórico dos Últimos 30 Dias
-  const historico30dias: { data: string; receitas: number; despesas: number; }[] = [];
-  
-  // Agrupar transações por dia
+  // ✅ Histórico do Período (sem filtro de data, agrupado por dia)
   const transacoesPorDia = new Map<string, { receitas: number; despesas: number }>();
   
-  transacoes
-    .filter(t => new Date(t.data) >= inicio30DiasAtras)
-    .forEach(t => {
-      const dataKey = t.data.split('T')[0]; // YYYY-MM-DD
-      
-      if (!transacoesPorDia.has(dataKey)) {
-        transacoesPorDia.set(dataKey, { receitas: 0, despesas: 0 });
-      }
-      
-      const dia = transacoesPorDia.get(dataKey)!;
-      if (t.valor > 0) {
-        dia.receitas += t.valor;
-      } else {
-        dia.despesas += Math.abs(t.valor);
-      }
-    });
-
-  // Criar array ordenado dos últimos 30 dias
-  for (let i = 29; i >= 0; i--) {
-    const data = new Date();
-    data.setDate(hoje.getDate() - i);
-    const dataKey = data.toISOString().split('T')[0];
+  transacoesDoPeriodo.forEach(t => {
+    const dataKey = t.data.split('T')[0]; // YYYY-MM-DD
     
-    const dia = transacoesPorDia.get(dataKey) || { receitas: 0, despesas: 0 };
-    historico30dias.push({
-      data: dataKey,
-      receitas: dia.receitas,
-      despesas: dia.despesas,
-    });
-  }
+    if (!transacoesPorDia.has(dataKey)) {
+      transacoesPorDia.set(dataKey, { receitas: 0, despesas: 0 });
+    }
+    
+    const dia = transacoesPorDia.get(dataKey)!;
+    if (t.valor > 0) {
+      dia.receitas += t.valor;
+    } else {
+      dia.despesas += Math.abs(t.valor);
+    }
+  });
+
+  // Converter Map para array ordenado
+  const historico30dias = Array.from(transacoesPorDia.entries())
+    .map(([data, valores]) => ({
+      data,
+      receitas: valores.receitas,
+      despesas: valores.despesas,
+    }))
+    .sort((a, b) => a.data.localeCompare(b.data));
 
   // E. Normalizar contas_cartoes e metas
   const contasCartoes = Array.isArray(raw.contas_cartao) 
@@ -214,21 +196,27 @@ function processRawDashboardData(raw: any, jid: string): DashboardData {
       }))
     : Array.isArray(raw.metas) ? raw.metas : [];
 
+  console.log('📊 Dados recebidos da API:', {
+    saldo_total_geral: raw.saldo_total_geral,
+    transacoes_no_periodo: transacoesDoPeriodo.length,
+    filtros_aplicados: raw.filtros_aplicados,
+  });
+
   console.log('📊 Dados processados:', {
     saldoTotal,
     receitaMensal,
     despesaMensal,
-    totalTransacoes: transacoes.length,
+    totalTransacoes: transacoesDoPeriodo.length,
     limitesComGastos: limites.length,
   });
 
-  // Retornar dados processados
+  // ✅ Retornar dados processados (usando dados pré-filtrados da API)
   return {
     jid,
     saldo_total: saldoTotal,
     receita_mensal: receitaMensal,
     despesa_mensal: despesaMensal,
-    transacoes,
+    transacoes: transacoesDoPeriodo,
     contas_cartoes: contasCartoes,
     categorias: Array.isArray(raw.categorias) ? raw.categorias : [],
     metas,
