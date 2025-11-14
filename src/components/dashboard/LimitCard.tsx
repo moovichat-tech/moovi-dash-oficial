@@ -10,7 +10,9 @@ interface LimitCardProps {
 }
 
 export function LimitCard({ budget }: LimitCardProps) {
-  const usagePercent = Math.min(100, (budget.gasto_atual / budget.limite) * 100);
+  const usagePercent = budget.limite > 0 
+    ? Math.min(100, ((budget.gasto_atual || 0) / budget.limite) * 100)
+    : 0;
 
   const statusColor =
     usagePercent >= 100
