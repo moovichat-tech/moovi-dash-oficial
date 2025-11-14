@@ -16,6 +16,7 @@ interface FloatingActionButtonProps {
 
 export function FloatingActionButton({ onSendCommand }: FloatingActionButtonProps) {
   const [open, setOpen] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   return (
     <>
@@ -37,9 +38,15 @@ export function FloatingActionButton({ onSendCommand }: FloatingActionButtonProp
           </DialogHeader>
           <ChatCommand
             onSendCommand={async (command) => {
-              await onSendCommand(command);
-              setOpen(false);
+              try {
+                setIsProcessing(true);
+                await onSendCommand(command);
+                setOpen(false);
+              } finally {
+                setIsProcessing(false);
+              }
             }}
+            isProcessing={isProcessing}
           />
         </DialogContent>
       </Dialog>
