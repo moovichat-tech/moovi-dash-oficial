@@ -50,7 +50,7 @@ export interface RecurringTransaction {
 export interface Budget {
   categoria: string;
   limite: number;
-  gasto_atual: number;
+  gasto_atual?: number; // Opcional - será calculado no frontend
 }
 
 export interface DashboardData {

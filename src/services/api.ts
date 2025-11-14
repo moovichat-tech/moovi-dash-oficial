@@ -109,6 +109,136 @@ export class ApiError extends Error {
 }
 
 /**
+ * Processa dados brutos da API e calcula valores agregados
+ */
+function processRawDashboardData(raw: any, jid: string): DashboardData {
+  // A. Variáveis de Data
+  const hoje = new Date();
+  const inicioDoMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  const inicio30DiasAtras = new Date();
+  inicio30DiasAtras.setDate(hoje.getDate() - 30);
+
+  // Garantir arrays vazios
+  const transacoes: any[] = Array.isArray(raw.transacoes) ? raw.transacoes : [];
+  const limitesRaw = Array.isArray(raw.limites) ? raw.limites : [];
+
+  // B. Cálculos Principais
+
+  // 1. Receitas do Mês
+  const receitaMensal = transacoes
+    .filter(t => new Date(t.data) >= inicioDoMes && t.valor > 0)
+    .reduce((acc, t) => acc + t.valor, 0);
+
+  // 2. Despesas do Mês (valor absoluto)
+  const despesaMensal = Math.abs(
+    transacoes
+      .filter(t => new Date(t.data) >= inicioDoMes && t.valor < 0)
+      .reduce((acc, t) => acc + t.valor, 0)
+  );
+
+  // 3. Saldo Total (todas as transações)
+  const saldoTotal = transacoes.reduce((acc, t) => acc + t.valor, 0);
+
+  // C. Limites por Categoria (com gasto_atual calculado)
+  const limites = limitesRaw.map((limite: any) => {
+    const gastoCategoriaMes = transacoes
+      .filter(t => 
+        t.categoria === limite.categoria && 
+        new Date(t.data) >= inicioDoMes && 
+        t.valor < 0
+      )
+      .reduce((acc, t) => acc + Math.abs(t.valor), 0);
+
+    return {
+      categoria: limite.categoria,
+      limite: limite.valor,
+      gasto_atual: gastoCategoriaMes,
+    };
+  });
+
+  // D. Histórico dos Últimos 30 Dias
+  const historico30dias: { data: string; receitas: number; despesas: number; }[] = [];
+  
+  // Agrupar transações por dia
+  const transacoesPorDia = new Map<string, { receitas: number; despesas: number }>();
+  
+  transacoes
+    .filter(t => new Date(t.data) >= inicio30DiasAtras)
+    .forEach(t => {
+      const dataKey = t.data.split('T')[0]; // YYYY-MM-DD
+      
+      if (!transacoesPorDia.has(dataKey)) {
+        transacoesPorDia.set(dataKey, { receitas: 0, despesas: 0 });
+      }
+      
+      const dia = transacoesPorDia.get(dataKey)!;
+      if (t.valor > 0) {
+        dia.receitas += t.valor;
+      } else {
+        dia.despesas += Math.abs(t.valor);
+      }
+    });
+
+  // Criar array ordenado dos últimos 30 dias
+  for (let i = 29; i >= 0; i--) {
+    const data = new Date();
+    data.setDate(hoje.getDate() - i);
+    const dataKey = data.toISOString().split('T')[0];
+    
+    const dia = transacoesPorDia.get(dataKey) || { receitas: 0, despesas: 0 };
+    historico30dias.push({
+      data: dataKey,
+      receitas: dia.receitas,
+      despesas: dia.despesas,
+    });
+  }
+
+  // E. Normalizar contas_cartoes e metas
+  const contasCartoes = Array.isArray(raw.contas_cartao) 
+    ? raw.contas_cartao.map((c: any) => ({
+        id: c.id,
+        nome: c.nome,
+        tipo: 'cartao_credito' as const,
+        saldo: 0,
+        limite: c.limite_credito,
+      }))
+    : Array.isArray(raw.contas_cartoes) ? raw.contas_cartoes : [];
+
+  const metas = Array.isArray(raw.metas_financeiras)
+    ? raw.metas_financeiras.map((m: any) => ({
+        id: m.id,
+        nome: m.descricao,
+        valor_alvo: m.valor_total,
+        valor_atual: m.valor_guardado,
+        data_alvo: m.prazo,
+      }))
+    : Array.isArray(raw.metas) ? raw.metas : [];
+
+  console.log('📊 Dados processados:', {
+    saldoTotal,
+    receitaMensal,
+    despesaMensal,
+    totalTransacoes: transacoes.length,
+    limitesComGastos: limites.length,
+  });
+
+  // Retornar dados processados
+  return {
+    jid,
+    saldo_total: saldoTotal,
+    receita_mensal: receitaMensal,
+    despesa_mensal: despesaMensal,
+    transacoes,
+    contas_cartoes: contasCartoes,
+    categorias: Array.isArray(raw.categorias) ? raw.categorias : [],
+    metas,
+    recorrencias: Array.isArray(raw.recorrencias) ? raw.recorrencias : [],
+    limites,
+    historico_30dias: historico30dias,
+  };
+}
+
+/**
  * Busca todos os dados do dashboard para o telefone do usuário
  * GET /dashboard-data?telefone=[TELEFONE]
  * Header: chave-dashboard-data
@@ -163,20 +293,8 @@ export async function getDashboardData(phoneNumber: string, jid?: string): Promi
       );
     }
 
-    // Normalizar estrutura e garantir arrays vazios quando ausentes
-    const data: DashboardData = {
-      jid: jid || phoneNumber,
-      saldo_total: raw.saldo_total ?? 0,
-      receita_mensal: raw.receita_mensal ?? 0,
-      despesa_mensal: raw.despesa_mensal ?? 0,
-      transacoes: Array.isArray(raw.transacoes) ? raw.transacoes : [],
-      contas_cartoes: Array.isArray(raw.contas_cartoes) ? raw.contas_cartoes : [],
-      categorias: Array.isArray(raw.categorias) ? raw.categorias : [],
-      metas: Array.isArray(raw.metas) ? raw.metas : [],
-      recorrencias: Array.isArray(raw.recorrencias) ? raw.recorrencias : [],
-      limites: Array.isArray(raw.limites) ? raw.limites : [],
-      historico_30dias: Array.isArray(raw.historico_30dias) ? raw.historico_30dias : [],
-    };
+    // ✅ Processar dados brutos e calcular valores agregados
+    const data = processRawDashboardData(raw, jid || phoneNumber);
 
     return data;
   } catch (error) {
