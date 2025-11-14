@@ -8,6 +8,7 @@ export function useDashboard(jid: string | null, phoneNumber: string | null) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isNotFound, setIsNotFound] = useState(false);
+  const [isProcessingCommand, setIsProcessingCommand] = useState(false);
 
   const loadDashboard = useCallback(async () => {
     if (!phoneNumber) {
@@ -47,11 +48,19 @@ export function useDashboard(jid: string | null, phoneNumber: string | null) {
       if (!phoneNumber) return;
 
       try {
+        setIsProcessingCommand(true);
+        
+        // Enviar comando
         await postDashboardCommand(phoneNumber, command);
-        // Após sucesso, recarregar todos os dados
+        
+        // ⏱️ AGUARDAR 2.5 segundos para n8n processar
+        await new Promise(resolve => setTimeout(resolve, 2500));
+        
+        // Recarregar dados atualizados
         await loadDashboard();
+        
         toast({
-          title: 'Comando processado',
+          title: 'Comando processado ✅',
           description: 'Seus dados foram atualizados com sucesso.',
         });
       } catch (err) {
@@ -61,6 +70,8 @@ export function useDashboard(jid: string | null, phoneNumber: string | null) {
           variant: 'destructive',
         });
         throw err;
+      } finally {
+        setIsProcessingCommand(false);
       }
     },
     [phoneNumber, loadDashboard]
@@ -71,6 +82,7 @@ export function useDashboard(jid: string | null, phoneNumber: string | null) {
     loading,
     error,
     isNotFound,
+    isProcessingCommand,
     refresh: loadDashboard,
     sendCommand,
   };

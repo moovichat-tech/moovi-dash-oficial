@@ -7,11 +7,14 @@ import { Loader2, Send, Sparkles } from 'lucide-react';
 interface ChatCommandProps {
   onSendCommand: (command: string) => Promise<void>;
   disabled?: boolean;
+  isProcessing?: boolean;
 }
 
-export function ChatCommand({ onSendCommand, disabled }: ChatCommandProps) {
+export function ChatCommand({ onSendCommand, disabled, isProcessing }: ChatCommandProps) {
   const [command, setCommand] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const isDisabled = loading || disabled || isProcessing;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +54,7 @@ export function ChatCommand({ onSendCommand, disabled }: ChatCommandProps) {
               placeholder="Digite seu comando em linguagem natural... Ex: 'Adicionar despesa de R$ 100 em supermercado'"
               value={command}
               onChange={(e) => setCommand(e.target.value)}
-              disabled={loading || disabled}
+              disabled={isDisabled}
               rows={3}
               className="resize-none"
             />
@@ -63,7 +66,7 @@ export function ChatCommand({ onSendCommand, disabled }: ChatCommandProps) {
                   variant="outline"
                   size="sm"
                   onClick={() => setCommand(suggestion)}
-                  disabled={loading || disabled}
+                  disabled={isDisabled}
                   className="text-xs"
                 >
                   {suggestion}
@@ -71,11 +74,11 @@ export function ChatCommand({ onSendCommand, disabled }: ChatCommandProps) {
               ))}
             </div>
           </div>
-          <Button type="submit" className="w-full" disabled={loading || disabled || !command.trim()}>
-            {loading ? (
+          <Button type="submit" className="w-full" disabled={isDisabled || !command.trim()}>
+            {loading || isProcessing ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Processando...
+                {isProcessing ? 'Processando comando...' : 'Processando...'}
               </>
             ) : (
               <>
