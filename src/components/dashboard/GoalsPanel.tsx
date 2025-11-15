@@ -42,8 +42,8 @@ export function GoalsPanel({ metas, onSendCommand }: GoalsPanelProps) {
               whileTap={tapScale}
             >
               <Button size="sm" onClick={() => setShowNewGoalModal(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Nova Meta</span>
+                <Plus className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Nova Meta</span>
               </Button>
             </motion.div>
           </div>
@@ -84,7 +84,7 @@ export function GoalsPanel({ metas, onSendCommand }: GoalsPanelProps) {
             </motion.div>
           ) : (
             <motion.div 
-              className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+              className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
               variants={containerVariants}
               initial="hidden"
               animate="visible"

@@ -1,5 +1,6 @@
-import { Moon, Sun, LogOut, RefreshCw, BarChart3 } from 'lucide-react';
+import { Moon, Sun, LogOut, RefreshCw, BarChart3, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useTheme } from '@/hooks/useTheme';
 import { useDashboard } from '@/hooks/useDashboard';
 import { BalanceCards } from '@/components/dashboard/BalanceCards';
@@ -48,24 +49,78 @@ export default function Dashboard({ jid, phoneNumber, onLogout, onNavigateToAnal
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5">
       {/* Header */}
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <img src={mooviLogo} alt="Moovi" className="h-8" />
-            <h1 className="text-xl font-bold hidden sm:block">Moovi.dash</h1>
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <img src={mooviLogo} alt="Moovi" className="h-7 sm:h-8" />
+            <h1 className="text-lg sm:text-xl font-bold hidden sm:block">Moovi.dash</h1>
           </div>
           
           <div className="flex items-center gap-2">
+            {/* Mobile: Hamburger Menu */}
+            <Sheet>
+              <SheetTrigger asChild className="md:hidden">
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right">
+                <SheetHeader>
+                  <SheetTitle>Menu</SheetTitle>
+                </SheetHeader>
+                <div className="flex flex-col gap-3 mt-6">
+                  {onNavigateToAnalytics && (
+                    <Button
+                      variant="outline"
+                      onClick={onNavigateToAnalytics}
+                      className="justify-start"
+                    >
+                      <BarChart3 className="h-4 w-4 mr-2" />
+                      Analytics
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    onClick={toggleTheme}
+                    className="justify-start"
+                  >
+                    {theme === 'light' ? (
+                      <>
+                        <Moon className="h-4 w-4 mr-2" />
+                        Modo Escuro
+                      </>
+                    ) : (
+                      <>
+                        <Sun className="h-4 w-4 mr-2" />
+                        Modo Claro
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={onLogout}
+                    className="justify-start"
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sair
+                  </Button>
+                </div>
+              </SheetContent>
+            </Sheet>
+
+            {/* Desktop: Inline Buttons */}
             {onNavigateToAnalytics && (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={onNavigateToAnalytics}
+                className="hidden md:flex"
               >
-                <BarChart3 className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">Analytics</span>
+                <BarChart3 className="h-4 w-4 md:mr-2" />
+                <span className="hidden lg:inline">Analytics</span>
               </Button>
             )}
             
+            {/* Always Visible: Refresh */}
             <Button
               variant="ghost"
               size="icon"
@@ -75,10 +130,12 @@ export default function Dashboard({ jid, phoneNumber, onLogout, onNavigateToAnal
               <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
             </Button>
             
+            {/* Desktop Only: Theme & Logout */}
             <Button
               variant="ghost"
               size="icon"
               onClick={toggleTheme}
+              className="hidden md:flex"
             >
               {theme === 'light' ? (
                 <Moon className="h-5 w-5" />
@@ -91,6 +148,7 @@ export default function Dashboard({ jid, phoneNumber, onLogout, onNavigateToAnal
               variant="ghost"
               size="icon"
               onClick={onLogout}
+              className="hidden md:flex"
             >
               <LogOut className="h-5 w-5" />
             </Button>
@@ -99,7 +157,7 @@ export default function Dashboard({ jid, phoneNumber, onLogout, onNavigateToAnal
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-6 space-y-6 pb-24">
+      <main className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 md:py-6 space-y-4 md:space-y-6 pb-24">
         {data && (
           <>
             <FinancialHealthScore

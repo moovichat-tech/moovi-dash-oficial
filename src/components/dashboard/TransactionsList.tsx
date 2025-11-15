@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import {
   Table,
   TableBody,
@@ -23,12 +24,14 @@ import { Transaction, TransactionFilterState } from '@/types/dashboard';
 import { Search, TrendingUp, TrendingDown } from 'lucide-react';
 import { TransactionFilters } from './TransactionFilters';
 import { TransactionFilterBadges } from './TransactionFilterBadges';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface TransactionsListProps {
   transactions: Transaction[];
 }
 
 export function TransactionsList({ transactions }: TransactionsListProps) {
+  const isMobile = useIsMobile();
   const [filterState, setFilterState] = useState<TransactionFilterState>({
     search: '',
     dateFrom: undefined,
@@ -202,65 +205,113 @@ export function TransactionsList({ transactions }: TransactionsListProps) {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Data</TableHead>
-                <TableHead>Descrição</TableHead>
-                <TableHead>Categoria</TableHead>
-                <TableHead className="text-right">Valor</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedTransactions.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground">
-                    Nenhuma transação encontrada
-                  </TableCell>
-                </TableRow>
-              ) : (
-                paginatedTransactions.map((transaction) => (
-                  <TableRow key={transaction.id}>
-                    <TableCell className="whitespace-nowrap">
+        {isMobile ? (
+          // MOBILE: Cards verticais
+          <div className="space-y-3">
+            {paginatedTransactions.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                Nenhuma transação encontrada
+              </p>
+            ) : (
+              paginatedTransactions.map((transaction) => (
+                <div key={transaction.id} className="border rounded-lg p-3 space-y-2">
+                  {/* Header do Card */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      {transaction.tipo === 'receita' ? (
+                        <TrendingUp className="h-4 w-4 text-success flex-shrink-0" />
+                      ) : (
+                        <TrendingDown className="h-4 w-4 text-destructive flex-shrink-0" />
+                      )}
+                      <span className="font-medium truncate">{transaction.descricao}</span>
+                    </div>
+                    <span
+                      className={`font-semibold whitespace-nowrap ${
+                        transaction.tipo === 'receita' ? 'text-success' : 'text-destructive'
+                      }`}
+                    >
+                      {transaction.tipo === 'receita' ? '+' : '-'}
+                      {formatCurrency(transaction.valor)}
+                    </span>
+                  </div>
+                  
+                  <Separator />
+                  
+                  {/* Footer do Card */}
+                  <div className="flex items-center justify-between text-sm">
+                    <Badge variant="outline" className="text-xs">
+                      {transaction.categoria}
+                    </Badge>
+                    <span className="text-muted-foreground text-xs">
                       {formatDate(transaction.data)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {transaction.tipo === 'receita' ? (
-                          <TrendingUp className="h-4 w-4 text-success" />
-                        ) : (
-                          <TrendingDown className="h-4 w-4 text-destructive" />
-                        )}
-                        <span className="font-medium">{transaction.descricao}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{transaction.categoria}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <span
-                        className={
-                          transaction.tipo === 'receita'
-                            ? 'text-success font-semibold'
-                            : 'text-destructive font-semibold'
-                        }
-                      >
-                        {transaction.tipo === 'receita' ? '+' : '-'}
-                        {formatCurrency(transaction.valor)}
-                      </span>
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        ) : (
+          // DESKTOP: Tabela tradicional
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Descrição</TableHead>
+                  <TableHead>Categoria</TableHead>
+                  <TableHead className="text-right">Valor</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {paginatedTransactions.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-muted-foreground">
+                      Nenhuma transação encontrada
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+                ) : (
+                  paginatedTransactions.map((transaction) => (
+                    <TableRow key={transaction.id}>
+                      <TableCell className="whitespace-nowrap">
+                        {formatDate(transaction.data)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {transaction.tipo === 'receita' ? (
+                            <TrendingUp className="h-4 w-4 text-success" />
+                          ) : (
+                            <TrendingDown className="h-4 w-4 text-destructive" />
+                          )}
+                          <span className="font-medium">{transaction.descricao}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{transaction.categoria}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <span
+                          className={
+                            transaction.tipo === 'receita'
+                              ? 'text-success font-semibold'
+                              : 'text-destructive font-semibold'
+                          }
+                        >
+                          {transaction.tipo === 'receita' ? '+' : '-'}
+                          {formatCurrency(transaction.valor)}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        )}
 
         {totalPages > 1 && (
           <div className="mt-4">
             <Pagination>
-              <PaginationContent>
+              <PaginationContent className="flex-wrap gap-1">
                 <PaginationItem>
                   <PaginationPrevious
                     onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}

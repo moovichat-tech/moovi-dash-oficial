@@ -33,18 +33,19 @@ export function FinancialChart({ data }: FinancialChartProps) {
         <CardTitle>Histórico - Últimos 30 Dias</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px] w-full">
+        <div className="h-[250px] md:h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
               <XAxis
                 dataKey="data"
                 className="text-xs"
-                tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
+                interval="preserveStartEnd"
               />
               <YAxis
                 className="text-xs"
-                tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                 tickFormatter={formatCurrency}
               />
               <Tooltip
@@ -55,7 +56,11 @@ export function FinancialChart({ data }: FinancialChartProps) {
                 }}
                 formatter={(value: number) => formatCurrency(value)}
               />
-              <Legend />
+              <Legend 
+                verticalAlign="top" 
+                height={36}
+                wrapperStyle={{ paddingBottom: '10px' }}
+              />
               <Line
                 type="monotone"
                 dataKey="Receitas"
