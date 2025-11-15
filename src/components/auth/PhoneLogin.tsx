@@ -22,7 +22,7 @@ const formatPhoneNumber = (value: string): string => {
 
   // Aplica máscara conforme o tamanho
   if (numbers.length === 0) {
-    return "+55 (";
+    return "+55";
   } else if (numbers.length <= 2) {
     return `+55 (${numbers}`;
   } else if (numbers.length <= 6) {
@@ -46,7 +46,7 @@ const extractPhoneNumbers = (formatted: string): string => {
 
 export function PhoneLogin({ onSuccess }: PhoneLoginProps) {
   const [step, setStep] = useState<"phone" | "code">("phone");
-  const [phoneNumber, setPhoneNumber] = useState("+55 (");
+  const [phoneNumber, setPhoneNumber] = useState("+55");
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -123,7 +123,7 @@ export function PhoneLogin({ onSuccess }: PhoneLoginProps) {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/10 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <img src={mooviLogo} alt="Moovi" className="h-12 mx-auto mb-4" />
+          <img src={mooviLogo} alt="Moovi" className="mx-auto mb-4" style={{ height: '60px' }} />
           <CardTitle className="text-2xl">Bem-vindo ao Moovi.dash</CardTitle>
           <CardDescription>
             {step === "phone"
@@ -149,7 +149,7 @@ export function PhoneLogin({ onSuccess }: PhoneLoginProps) {
                     }}
                     onKeyDown={(e) => {
                       // Impedir apagar o prefixo +55
-                      if (e.key === "Backspace" && phoneNumber.length <= 5) {
+                      if (e.key === "Backspace" && phoneNumber.length <= 3) {
                         e.preventDefault();
                       }
                     }}
