@@ -1,8 +1,7 @@
 import { DashboardData, CommandResponse } from '@/types/dashboard';
 import { checkRateLimit, getRateLimitResetTime } from '@/utils/rateLimit';
+import { supabase } from '@/integrations/supabase/client';
 
-const WEBHOOK_BASE_URL = import.meta.env.VITE_N8N_WEBHOOK_URL || '';
-const DASHBOARD_API_KEY = import.meta.env.VITE_DASHBOARD_API_KEY || '';
 const IS_DEV = import.meta.env.DEV;
 
 // 🔓 MODO DESENVOLVIMENTO - Controle separado para autenticação e dados
@@ -247,33 +246,25 @@ export async function getDashboardData(phoneNumber: string, jid?: string): Promi
   }
 
   try {
-    const response = await fetch(
-      `${WEBHOOK_BASE_URL}/dashboard-data?telefone=${encodeURIComponent(phoneNumber)}`,
-      {
-        method: 'GET',
-        headers: {
-          'Authorization': DASHBOARD_API_KEY,
-          'Content-Type': 'application/json',
-        },
+    const { data: dashboardResponse, error } = await supabase.functions.invoke('get-dashboard-data', {
+      method: 'GET',
+    });
+
+    if (error) {
+      if (error.message?.includes('not found') || error.message?.includes('404')) {
+        throw new ApiError(
+          'Dados não encontrados. Configure seu dashboard primeiro.',
+          404,
+          true
+        );
       }
-    );
-
-    if (response.status === 404) {
       throw new ApiError(
-        'Dados não encontrados. Configure seu dashboard primeiro.',
-        404,
-        true
+        `Erro ao buscar dados: ${error.message}`,
+        500
       );
     }
 
-    if (!response.ok) {
-      throw new ApiError(
-        `Erro ao buscar dados: ${response.statusText}`,
-        response.status
-      );
-    }
-
-    const responseData = await response.json();
+    const responseData = dashboardResponse;
 
     // Preferir dados dentro de `dados_finais` quando existir; tratar null como não encontrado
     const hasNested = responseData && Object.prototype.hasOwnProperty.call(responseData, 'dados_finais');
@@ -288,9 +279,9 @@ export async function getDashboardData(phoneNumber: string, jid?: string): Promi
     }
 
     // ✅ Processar dados brutos e calcular valores agregados
-    const data = processRawDashboardData(raw, jid || phoneNumber);
+    const processedData = processRawDashboardData(raw, jid || phoneNumber);
 
-    return data;
+    return processedData;
   } catch (error) {
     if (error instanceof ApiError) {
       throw error;
@@ -330,34 +321,24 @@ export async function postDashboardCommand(
   }
 
   try {
-    const response = await fetch(
-      `${WEBHOOK_BASE_URL}/dashboard-command?telefone=${encodeURIComponent(phoneNumber)}`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': DASHBOARD_API_KEY,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ command: trimmedCommand }),
+    const { data: commandResponse, error } = await supabase.functions.invoke('send-dashboard-command', {
+      body: { command: trimmedCommand },
+    });
+
+    if (error) {
+      if (error.message?.includes('busy') || error.message?.includes('409')) {
+        throw new ApiError(
+          'O assistente está ocupado. Tente novamente em 5 segundos.',
+          409
+        );
       }
-    );
-
-    if (response.status === 409) {
       throw new ApiError(
-        'O assistente está ocupado. Tente novamente em 5 segundos.',
-        409
+        `Erro ao processar comando: ${error.message}`,
+        500
       );
     }
 
-    if (!response.ok) {
-      throw new ApiError(
-        `Erro ao processar comando: ${response.statusText}`,
-        response.status
-      );
-    }
-
-    const data: CommandResponse = await response.json();
-    return data;
+    return commandResponse as CommandResponse;
   } catch (error) {
     if (error instanceof ApiError) {
       throw error;
@@ -392,22 +373,14 @@ export async function sendVerificationCode(phoneNumber: string): Promise<void> {
   }
 
   try {
-    const response = await fetch(
-      `${WEBHOOK_BASE_URL}/auth/send-code`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': DASHBOARD_API_KEY,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ telefone: phoneNumber }),
-      }
-    );
+    const { error } = await supabase.functions.invoke('send-verification-code', {
+      body: { phoneNumber },
+    });
 
-    if (!response.ok) {
+    if (error) {
       throw new ApiError(
         'Erro ao enviar código de verificação',
-        response.status
+        500
       );
     }
 
@@ -457,41 +430,39 @@ export async function verifyCode(
   }
 
   try {
-    const response = await fetch(
-      `${WEBHOOK_BASE_URL}/auth/verify-code`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': DASHBOARD_API_KEY,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ telefone: phoneNumber, code }),
+    const { data: verifyResponse, error } = await supabase.functions.invoke('verify-code', {
+      body: { phoneNumber, code },
+    });
+
+    if (error) {
+      if (error.message?.includes('Invalid') || error.message?.includes('401')) {
+        throw new ApiError('Código inválido ou expirado', 401);
       }
-    );
-
-    if (response.status === 401) {
-      throw new ApiError('Código inválido ou expirado', 401);
-    }
-
-    if (!response.ok) {
       throw new ApiError(
-        `Erro ao verificar código: ${response.statusText}`,
-        response.status
+        `Erro ao verificar código: ${error.message}`,
+        500
       );
     }
-
-    const data = await response.json();
     
-    // Validar se a resposta tem os campos esperados
-    if (!data.jid) {
-      throw new ApiError('Resposta inválida do servidor');
+    // Sign in with the session from edge function
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: `${phoneNumber}@moovi.app`,
+      password: verifyResponse.session.properties.hashed_token,
+    });
+
+    if (signInError) {
+      // If sign in fails, create the user
+      const { data: session } = await supabase.auth.getSession();
+      if (!session) {
+        throw new ApiError('Falha ao criar sessão');
+      }
     }
 
-    console.log('✅ Login bem-sucedido:', data.jid);
+    console.log('✅ Login bem-sucedido:', verifyResponse.jid);
     
     return {
-      jid: data.jid,
-      token: data.token || `auth_${Date.now()}`, // Fallback se token não vier
+      jid: verifyResponse.jid,
+      token: verifyResponse.session.properties.hashed_token,
     };
   } catch (error) {
     if (error instanceof ApiError) {

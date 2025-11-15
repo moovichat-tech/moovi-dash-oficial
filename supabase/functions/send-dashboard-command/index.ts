@@ -1,0 +1,87 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders })
+  }
+
+  try {
+    // Get JWT token from Authorization header
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      throw new Error('Missing authorization header')
+    }
+
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    )
+
+    // Verify user session
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser()
+    
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const phoneNumber = user.user_metadata?.phone_number
+    if (!phoneNumber) {
+      throw new Error('Phone number not found in user metadata')
+    }
+
+    const { command } = await req.json()
+
+    if (!command) {
+      throw new Error('Command is required')
+    }
+
+    const webhookUrl = Deno.env.get('N8N_WEBHOOK_URL')
+    const apiKey = Deno.env.get('N8N_DASHBOARD_API_KEY')
+
+    const response = await fetch(
+      `${webhookUrl}/dashboard-command?telefone=${encodeURIComponent(phoneNumber)}`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': apiKey!,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ command }),
+      }
+    )
+
+    if (response.status === 409) {
+      return new Response(
+        JSON.stringify({ error: 'Assistant is busy' }),
+        { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    if (!response.ok) {
+      throw new Error(`Failed to send command: ${response.statusText}`)
+    }
+
+    const data = await response.json()
+
+    return new Response(
+      JSON.stringify(data),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  } catch (error) {
+    console.error('Error in send-dashboard-command:', error)
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    return new Response(
+      JSON.stringify({ error: errorMessage }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+})
