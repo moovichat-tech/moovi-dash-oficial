@@ -2,50 +2,60 @@ import { useState, useEffect } from 'react';
 import { PhoneLogin } from '@/components/auth/PhoneLogin';
 import Dashboard from './Dashboard';
 import Analytics from './Analytics';
-
-const AUTH_STORAGE_KEY = 'moovi-auth';
-
-interface AuthData {
-  jid: string;
-  token: string;
-  phoneNumber: string;
-}
+import { supabase } from '@/integrations/supabase/client';
+import type { User } from '@supabase/supabase-js';
 
 type ViewType = 'dashboard' | 'analytics';
 
 const Index = () => {
-  const [auth, setAuth] = useState<AuthData | null>(() => {
-    const stored = localStorage.getItem(AUTH_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : null;
-  });
+  const [user, setUser] = useState<User | null>(null);
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (auth) {
-      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(auth));
-    } else {
-      localStorage.removeItem(AUTH_STORAGE_KEY);
-    }
-  }, [auth]);
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleLoginSuccess = (jid: string, token: string, phoneNumber: string) => {
-    setAuth({ jid, token, phoneNumber });
+    // Auth is now handled by Supabase, just refresh session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
   };
 
-  const handleLogout = () => {
-    setAuth(null);
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
     setCurrentView('dashboard');
   };
 
-  if (!auth) {
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+
+  if (!user) {
     return <PhoneLogin onSuccess={handleLoginSuccess} />;
   }
+
+  const phoneNumber = user.user_metadata?.phone_number || '';
+  const jid = user.user_metadata?.jid || '';
 
   if (currentView === 'analytics') {
     return (
       <Analytics 
-        jid={auth.jid}
-        phoneNumber={auth.phoneNumber}
+        jid={jid}
+        phoneNumber={phoneNumber}
         onBack={() => setCurrentView('dashboard')}
       />
     );
@@ -53,8 +63,8 @@ const Index = () => {
 
   return (
     <Dashboard 
-      jid={auth.jid}
-      phoneNumber={auth.phoneNumber}
+      jid={jid}
+      phoneNumber={phoneNumber}
       onLogout={handleLogout}
       onNavigateToAnalytics={() => setCurrentView('analytics')}
     />
