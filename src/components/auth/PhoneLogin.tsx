@@ -56,11 +56,22 @@ export function PhoneLogin({ onSuccess }: PhoneLoginProps) {
     // Extrair números com código do país (55 + DDD + número)
     const phoneOnly = extractPhoneNumbers(phoneNumber);
 
-    // Validação: deve ter 12 (fixo: 55+10) ou 13 (celular: 55+11) dígitos
+    // Validação aprimorada: comprimento e formato brasileiro
     if (phoneOnly.length < 12 || phoneOnly.length > 13) {
       toast({
         title: "Telefone inválido",
         description: "Digite um número de telefone válido com DDD.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validação de formato: DDD válido (11-99) e número de celular (9XXXX-XXXX)
+    const phoneRegex = /^55(1[1-9]|2[1-8]|3[1-5]|4[1-9]|5[1-5]|6[1-9]|7[1-9]|8[1-9]|9[1-9])[6-9]\d{7,8}$/;
+    if (!phoneRegex.test(phoneOnly)) {
+      toast({
+        title: "Telefone inválido",
+        description: "Digite um número de celular brasileiro válido com DDD.",
         variant: "destructive",
       });
       return;
