@@ -1,8 +1,15 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+import { checkRateLimit, getClientIP } from '../_shared/rateLimit.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+// Rate limit: 10 commands per minute per user
+const RATE_LIMIT = {
+  maxRequests: 10,
+  windowMs: 60 * 1000, // 1 minute
 }
 
 Deno.serve(async (req) => {
@@ -30,6 +37,28 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ error: 'Unauthorized' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Server-side rate limiting by user ID
+    const rateCheck = checkRateLimit(user.id, RATE_LIMIT);
+    
+    if (!rateCheck.allowed) {
+      const resetIn = Math.ceil((rateCheck.resetAt - Date.now()) / 1000);
+      return new Response(
+        JSON.stringify({ 
+          error: `Muitos comandos. Aguarde ${resetIn} segundos.`,
+          resetAt: rateCheck.resetAt 
+        }),
+        { 
+          status: 429, 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'X-RateLimit-Remaining': rateCheck.remaining.toString(),
+            'X-RateLimit-Reset': rateCheck.resetAt.toString(),
+          } 
+        }
       )
     }
 
