@@ -50,20 +50,39 @@ Deno.serve(async (req) => {
     const webhookUrl = Deno.env.get('N8N_WEBHOOK_URL')
     const apiKey = Deno.env.get('N8N_DASHBOARD_API_KEY')
 
+    if (!webhookUrl || !apiKey) {
+      console.error('Missing required environment variables:', { 
+        hasWebhookUrl: !!webhookUrl, 
+        hasApiKey: !!apiKey 
+      })
+      throw new Error('Server configuration error: Missing N8N credentials')
+    }
+
+    const endpoint = `${webhookUrl}/auth/send-code`
+    console.log('Calling N8N endpoint for phone:', phoneNumber.substring(0, 4) + '****')
+
     const response = await fetch(
-      `${webhookUrl}/auth/send-code`,
+      endpoint,
       {
         method: 'POST',
         headers: {
-          'Authorization': apiKey!,
+          'Authorization': apiKey,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ telefone: phoneNumber }),
       }
     )
 
+    console.log('N8N response status:', response.status, response.statusText)
+
     if (!response.ok) {
-      throw new Error(`Failed to send verification code: ${response.statusText}`)
+      const errorBody = await response.text()
+      console.error('N8N error response:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorBody.substring(0, 200) // Log first 200 chars
+      })
+      throw new Error(`N8N webhook failed (${response.status}): ${response.statusText}. Verifique a configuração do webhook N8N.`)
     }
 
     return new Response(
