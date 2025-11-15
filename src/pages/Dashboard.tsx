@@ -117,7 +117,11 @@ export default function Dashboard({ jid, phoneNumber, onLogout, onNavigateToAnal
 
             <GoalsPanel metas={data.metas || []} onSendCommand={sendCommand} />
 
-            <AccountsPanel accounts={data.contas_cartoes || []} budgets={data.limites || []} />
+            <AccountsPanel 
+              accounts={data.contas_cartoes || []} 
+              budgets={data.limites || []} 
+              onSendCommand={sendCommand}
+            />
 
             <TransactionsList transactions={data.transacoes || []} />
           </>
