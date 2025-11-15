@@ -53,7 +53,7 @@ export function AccountsPanel({ accounts, budgets, onSendCommand }: AccountsPane
         </CardHeader>
         <CardContent>
           <motion.div 
-            className="grid gap-4 md:grid-cols-3"
+            className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
@@ -101,8 +101,8 @@ export function AccountsPanel({ accounts, budgets, onSendCommand }: AccountsPane
             whileTap={tapScale}
           >
             <Button size="sm" variant="outline" onClick={() => setShowNewAccountModal(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Adicionar Conta
+              <Plus className="h-4 w-4 md:mr-2" />
+              <span className="hidden md:inline">Adicionar Conta</span>
             </Button>
           </motion.div>
         </div>
@@ -129,7 +129,7 @@ export function AccountsPanel({ accounts, budgets, onSendCommand }: AccountsPane
           </motion.div>
         ) : (
           <motion.div 
-            className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+            className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
             variants={containerVariants}
             initial="hidden"
             animate="visible"
@@ -144,7 +144,7 @@ export function AccountsPanel({ accounts, budgets, onSendCommand }: AccountsPane
       <div>
         <h3 className="text-lg font-semibold mb-4">Limites por Categoria</h3>
         <motion.div 
-          className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+          className="grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
           variants={containerVariants}
           initial="hidden"
           animate="visible"

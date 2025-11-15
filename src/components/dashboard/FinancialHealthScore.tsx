@@ -26,7 +26,7 @@ export function FinancialHealthScore({
     >
       <Card className={`border-2 ${health.bgColor}`}>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <motion.div 
             className="flex-1"
             variants={slideLeftVariants}
@@ -52,7 +52,7 @@ export function FinancialHealthScore({
           </motion.div>
           
           <motion.div 
-            className={`text-5xl font-bold ${health.color}`}
+            className={`text-4xl md:text-5xl font-bold ${health.color}`}
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{
@@ -76,7 +76,7 @@ export function FinancialHealthScore({
         </motion.div>
         
         <motion.div 
-          className="grid grid-cols-3 gap-2 text-center text-xs font-medium"
+          className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-center text-xs font-medium"
           initial="hidden"
           animate="visible"
           variants={{
