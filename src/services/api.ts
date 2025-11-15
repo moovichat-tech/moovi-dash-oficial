@@ -1,7 +1,9 @@
 import { DashboardData, CommandResponse } from '@/types/dashboard';
+import { checkRateLimit, getRateLimitResetTime } from '@/utils/rateLimit';
 
 const WEBHOOK_BASE_URL = import.meta.env.VITE_N8N_WEBHOOK_URL || '';
 const DASHBOARD_API_KEY = import.meta.env.VITE_DASHBOARD_API_KEY || '';
+const IS_DEV = import.meta.env.DEV;
 
 // 🔓 MODO DESENVOLVIMENTO - Controle separado para autenticação e dados
 const IS_DEV_BYPASS_AUTH = false;  // Autenticação via n8n (WhatsApp)
@@ -196,19 +198,21 @@ function processRawDashboardData(raw: any, jid: string): DashboardData {
       }))
     : Array.isArray(raw.metas) ? raw.metas : [];
 
-  console.log('📊 Dados recebidos da API:', {
-    saldo_total_geral: raw.saldo_total_geral,
-    transacoes_no_periodo: transacoesDoPeriodo.length,
-    filtros_aplicados: raw.filtros_aplicados,
-  });
+  if (IS_DEV) {
+    console.log('📊 Dados recebidos da API:', {
+      saldo_total_geral: raw.saldo_total_geral,
+      transacoes_no_periodo: transacoesDoPeriodo.length,
+      filtros_aplicados: raw.filtros_aplicados,
+    });
 
-  console.log('📊 Dados processados:', {
-    saldoTotal,
-    receitaMensal,
-    despesaMensal,
-    totalTransacoes: transacoesDoPeriodo.length,
-    limitesComGastos: limites.length,
-  });
+    console.log('📊 Dados processados:', {
+      saldoTotal,
+      receitaMensal,
+      despesaMensal,
+      totalTransacoes: transacoesDoPeriodo.length,
+      limitesComGastos: limites.length,
+    });
+  }
 
   // ✅ Retornar dados processados (usando dados pré-filtrados da API)
   return {
@@ -236,7 +240,9 @@ function processRawDashboardData(raw: any, jid: string): DashboardData {
 export async function getDashboardData(phoneNumber: string, jid?: string): Promise<DashboardData> {
   if (IS_DEV_BYPASS_DATA) {
     await new Promise(resolve => setTimeout(resolve, 800));
-    console.log('🔓 DEV MODE: Retornando dados mockados para', phoneNumber);
+    if (IS_DEV) {
+      console.log('🔓 DEV MODE: Retornando dados mockados');
+    }
     return { ...MOCK_DASHBOARD_DATA, jid: jid || phoneNumber };
   }
 
@@ -305,6 +311,24 @@ export async function postDashboardCommand(
   phoneNumber: string,
   command: string
 ): Promise<CommandResponse> {
+  // Rate limiting: max 10 commands per minute
+  if (!checkRateLimit('dashboard-command', { maxRequests: 10, windowMs: 60000 })) {
+    const resetTime = Math.ceil(getRateLimitResetTime('dashboard-command', 60000) / 1000);
+    throw new ApiError(
+      `Muitas requisições. Tente novamente em ${resetTime}s.`,
+      429
+    );
+  }
+
+  // Input validation
+  const trimmedCommand = command.trim();
+  if (trimmedCommand.length === 0) {
+    throw new ApiError('Comando não pode estar vazio');
+  }
+  if (trimmedCommand.length > 500) {
+    throw new ApiError('Comando muito longo. Máximo de 500 caracteres.');
+  }
+
   try {
     const response = await fetch(
       `${WEBHOOK_BASE_URL}/dashboard-command?telefone=${encodeURIComponent(phoneNumber)}`,
@@ -314,7 +338,7 @@ export async function postDashboardCommand(
           'Authorization': DASHBOARD_API_KEY,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ command }),
+        body: JSON.stringify({ command: trimmedCommand }),
       }
     );
 
@@ -349,9 +373,21 @@ export async function postDashboardCommand(
  * Body: { "telefone": "62992509945" }
  */
 export async function sendVerificationCode(phoneNumber: string): Promise<void> {
+  // Rate limiting: max 3 attempts per hour per phone number
+  const rateLimitKey = `send-code-${phoneNumber}`;
+  if (!checkRateLimit(rateLimitKey, { maxRequests: 3, windowMs: 3600000 })) {
+    const resetTime = Math.ceil(getRateLimitResetTime(rateLimitKey, 3600000) / 60000);
+    throw new ApiError(
+      `Muitas tentativas. Tente novamente em ${resetTime} minutos.`,
+      429
+    );
+  }
+
   if (IS_DEV_BYPASS_AUTH) {
     await new Promise(resolve => setTimeout(resolve, 500));
-    console.log('🔓 DEV MODE: Código "enviado" para', phoneNumber);
+    if (IS_DEV) {
+      console.log('🔓 DEV MODE: Código de verificação simulado');
+    }
     return;
   }
 
@@ -375,7 +411,9 @@ export async function sendVerificationCode(phoneNumber: string): Promise<void> {
       );
     }
 
-    console.log('✅ Código enviado via WhatsApp para', phoneNumber);
+    if (IS_DEV) {
+      console.log('✅ Código enviado via WhatsApp');
+    }
   } catch (error) {
     if (error instanceof ApiError) {
       throw error;
@@ -395,13 +433,25 @@ export async function verifyCode(
   phoneNumber: string,
   code: string
 ): Promise<{ jid: string; token: string }> {
+  // Rate limiting: max 5 attempts per 15 minutes per phone number
+  const rateLimitKey = `verify-code-${phoneNumber}`;
+  if (!checkRateLimit(rateLimitKey, { maxRequests: 5, windowMs: 900000 })) {
+    const resetTime = Math.ceil(getRateLimitResetTime(rateLimitKey, 900000) / 60000);
+    throw new ApiError(
+      `Muitas tentativas. Tente novamente em ${resetTime} minutos.`,
+      429
+    );
+  }
+
   if (IS_DEV_BYPASS_AUTH) {
     await new Promise(resolve => setTimeout(resolve, 500));
     
     const mockJid = `${phoneNumber.replace(/\D/g, '')}@s.whatsapp.net`;
     const mockToken = `dev_token_${Date.now()}`;
     
-    console.log('🔓 DEV MODE: Login aceito ->', { jid: mockJid, token: mockToken });
+    if (IS_DEV) {
+      console.log('🔓 DEV MODE: Login aceito');
+    }
     
     return { jid: mockJid, token: mockToken };
   }
