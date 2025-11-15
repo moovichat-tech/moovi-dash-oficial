@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Plus, Wallet } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,15 +6,18 @@ import { Button } from '@/components/ui/button';
 import { Account, Budget } from '@/types/dashboard';
 import { AccountCard } from './AccountCard';
 import { LimitCard } from './LimitCard';
+import { NewAccountModal } from './NewAccountModal';
 import { useCountUp } from '@/hooks/useCountUp';
 import { containerVariants, fadeInVariants, tapScale } from '@/lib/animations';
 
 interface AccountsPanelProps {
   accounts: Account[];
   budgets: Budget[];
+  onSendCommand: (command: string) => Promise<void>;
 }
 
-export function AccountsPanel({ accounts, budgets }: AccountsPanelProps) {
+export function AccountsPanel({ accounts, budgets, onSendCommand }: AccountsPanelProps) {
+  const [showNewAccountModal, setShowNewAccountModal] = useState(false);
   const safeAccounts = accounts || [];
   const totalBalance = safeAccounts.reduce((sum, a) => sum + a.saldo, 0);
   const totalLimits = safeAccounts
@@ -96,7 +100,7 @@ export function AccountsPanel({ accounts, budgets }: AccountsPanelProps) {
             whileHover={{ scale: 1.05 }}
             whileTap={tapScale}
           >
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="outline" onClick={() => setShowNewAccountModal(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Adicionar Conta
             </Button>
@@ -150,6 +154,12 @@ export function AccountsPanel({ accounts, budgets }: AccountsPanelProps) {
           ))}
         </motion.div>
       </div>
+
+      <NewAccountModal
+        open={showNewAccountModal}
+        onClose={() => setShowNewAccountModal(false)}
+        onSendCommand={onSendCommand}
+      />
     </motion.div>
   );
 }
