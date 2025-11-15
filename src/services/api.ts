@@ -1,6 +1,7 @@
 import { DashboardData, CommandResponse } from '@/types/dashboard';
 import { checkRateLimit, getRateLimitResetTime } from '@/utils/rateLimit';
 import { supabase } from '@/integrations/supabase/client';
+import { z } from 'zod';
 
 const IS_DEV = import.meta.env.DEV;
 
@@ -311,13 +312,24 @@ export async function postDashboardCommand(
     );
   }
 
-  // Input validation
-  const trimmedCommand = command.trim();
-  if (trimmedCommand.length === 0) {
-    throw new ApiError('Comando não pode estar vazio');
-  }
-  if (trimmedCommand.length > 500) {
-    throw new ApiError('Comando muito longo. Máximo de 500 caracteres.');
+  // Input validation with zod schema
+  const commandSchema = z.string()
+    .trim()
+    .min(1, 'Comando não pode estar vazio')
+    .max(500, 'Comando muito longo. Máximo de 500 caracteres.')
+    .regex(
+      /^[a-zA-Z0-9\s\$\.,!?áéíóúâêôãõçÁÉÍÓÚÂÊÔÃÕÇ\-]+$/,
+      'Comando contém caracteres inválidos. Use apenas letras, números e pontuação básica.'
+    );
+
+  let trimmedCommand: string;
+  try {
+    trimmedCommand = commandSchema.parse(command);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      throw new ApiError(error.errors[0].message);
+    }
+    throw new ApiError('Comando inválido');
   }
 
   try {
