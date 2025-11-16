@@ -138,7 +138,7 @@ export function PhoneLogin({ onSuccess }: PhoneLoginProps) {
           <CardTitle className="text-2xl">Bem-vindo ao Moovi.dash</CardTitle>
           <CardDescription>
             {step === "phone"
-              ? "Digite seu telefone para receber o código de verificação"
+              ? "Digite seu número do whatsapp brasileiro válido com DDD"
               : `Digite o código enviado para ${phoneNumber}`}
           </CardDescription>
         </CardHeader>
