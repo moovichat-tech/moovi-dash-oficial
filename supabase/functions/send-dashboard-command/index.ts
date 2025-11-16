@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
     const apiKey = Deno.env.get('N8N_DASHBOARD_API_KEY')
 
     const response = await fetch(
-      `${webhookUrl}/dashboard-command?telefone=${encodeURIComponent(phoneNumber)}`,
+      `${webhookUrl}/webhook/dashboard-command?telefone=${encodeURIComponent(phoneNumber)}`,
       {
         method: 'POST',
         headers: {

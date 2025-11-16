@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
 
     // Verify code with n8n
     const response = await fetch(
-      `${webhookUrl}/auth/verify-code`,
+      `${webhookUrl}/webhook/auth/verify-code`,
       {
         method: 'POST',
         headers: {
