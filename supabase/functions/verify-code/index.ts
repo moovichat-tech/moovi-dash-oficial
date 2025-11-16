@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
     const response = await fetch(`${webhookUrl}/webhook/auth/verify-code`, {
       method: "POST",
       headers: {
-        Authorization: apiKey,
+        Authorization: apiKey!,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ telefone: phoneNumber, code }),
