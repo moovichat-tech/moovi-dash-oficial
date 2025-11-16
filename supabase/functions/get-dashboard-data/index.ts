@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { checkRateLimit, getClientIP } from "../_shared/rateLimit.ts";
+import { z } from "https://esm.sh/zod@3.22.4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,6 +12,10 @@ const RATE_LIMIT = {
   maxRequests: 30,
   windowMs: 60 * 1000, // 1 minute
 };
+
+// Input validation schema
+const phoneSchema = z.string()
+  .regex(/^55[1-9]{2}9?[6-9]\d{7,8}$/, 'Formato de telefone inválido');
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -70,7 +75,23 @@ Deno.serve(async (req) => {
 
     const phoneNumber = user.user_metadata?.phone_number;
     if (!phoneNumber) {
-      throw new Error("Phone number not found in user metadata");
+      return new Response(
+        JSON.stringify({ error: "Telefone não encontrado" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Server-side input validation
+    try {
+      phoneSchema.parse(phoneNumber);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        console.warn(`[SECURITY] Validation failed for user phone: ${error.errors[0].message}`);
+        return new Response(
+          JSON.stringify({ error: "Telefone inválido" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     const webhookUrl = Deno.env.get("N8N_WEBHOOK_URL");

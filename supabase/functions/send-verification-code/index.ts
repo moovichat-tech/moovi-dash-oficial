@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { checkRateLimit, getClientIP } from "../_shared/rateLimit.ts";
+import { z } from "https://esm.sh/zod@3.22.4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,6 +12,10 @@ const RATE_LIMIT = {
   maxRequests: 3,
   windowMs: 60 * 60 * 1000, // 1 hour
 };
+
+// Input validation schema
+const phoneSchema = z.string()
+  .regex(/^55[1-9]{2}9?[6-9]\d{7,8}$/, 'Formato de telefone inválido');
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -44,7 +49,23 @@ Deno.serve(async (req) => {
     const { phoneNumber } = await req.json();
 
     if (!phoneNumber) {
-      throw new Error("Phone number is required");
+      return new Response(
+        JSON.stringify({ error: "Telefone é obrigatório" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Server-side input validation
+    try {
+      phoneSchema.parse(phoneNumber);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        console.warn(`[SECURITY] Validation failed: ${error.errors[0].message}`);
+        return new Response(
+          JSON.stringify({ error: error.errors[0].message }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     const webhookUrl = Deno.env.get("N8N_WEBHOOK_URL");

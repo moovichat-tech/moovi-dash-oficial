@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { checkRateLimit, getClientIP } from "../_shared/rateLimit.ts";
+import { z } from "https://esm.sh/zod@3.22.4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,6 +12,14 @@ const RATE_LIMIT = {
   maxRequests: 5,
   windowMs: 15 * 60 * 1000, // 15 minutes
 };
+
+// Input validation schemas
+const phoneSchema = z.string()
+  .regex(/^55[1-9]{2}9?[6-9]\d{7,8}$/, 'Formato de telefone inválido');
+
+const codeSchema = z.string()
+  .length(6, 'Código deve ter 6 dígitos')
+  .regex(/^\d{6}$/, 'Código deve conter apenas números');
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -44,7 +53,24 @@ Deno.serve(async (req) => {
     const { phoneNumber, code } = await req.json();
 
     if (!phoneNumber || !code) {
-      throw new Error("Phone number and code are required");
+      return new Response(
+        JSON.stringify({ error: "Telefone e código são obrigatórios" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Server-side input validation
+    try {
+      phoneSchema.parse(phoneNumber);
+      codeSchema.parse(code);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        console.warn(`[SECURITY] Validation failed: ${error.errors[0].message}`);
+        return new Response(
+          JSON.stringify({ error: error.errors[0].message }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     const webhookUrl = Deno.env.get("N8N_WEBHOOK_URL");
@@ -100,9 +126,14 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
 
-    // Create or sign in user using phone as email with password based on JID
+    // Create or sign in user using phone as email with cryptographically random password
     const email = `${phoneNumber}@moovi.app`;
-    const password = `moovi_${data.jid}`; // Password based on JID
+    
+    // Generate secure random password
+    const randomBytes = crypto.getRandomValues(new Uint8Array(32));
+    const password = Array.from(randomBytes)
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
     
     console.info(`[SECURITY] Attempting user operation for email: ${email}`);
     
