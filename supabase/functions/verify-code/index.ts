@@ -50,20 +50,25 @@ Deno.serve(async (req) => {
     const webhookUrl = Deno.env.get('N8N_WEBHOOK_URL')
     const apiKey = Deno.env.get('N8N_DASHBOARD_API_KEY')
 
+    console.info(`Calling N8N verify endpoint for phone: ${phoneNumber.substring(0, 4)}****`)
+
     // Verify code with n8n
     const response = await fetch(
       `${webhookUrl}/webhook/auth/verify-code`,
       {
         method: 'POST',
         headers: {
-          'Authorization': apiKey!,
+          'X-N8N-API-KEY': apiKey!,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ telefone: phoneNumber, code }),
       }
     )
 
+    console.info(`N8N verify response status: ${response.status} ${response.statusText}`)
+
     if (response.status === 401) {
+      console.error('N8N returned 401 - Invalid or expired code')
       return new Response(
         JSON.stringify({ error: 'Invalid or expired code' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -71,7 +76,13 @@ Deno.serve(async (req) => {
     }
 
     if (!response.ok) {
-      throw new Error(`Failed to verify code: ${response.statusText}`)
+      const errorBody = await response.text()
+      console.error('N8N error response:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorBody
+      })
+      throw new Error(`N8N webhook failed (${response.status}): ${response.statusText}. ${errorBody}`)
     }
 
     const data = await response.json()
