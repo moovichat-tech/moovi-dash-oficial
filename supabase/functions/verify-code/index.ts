@@ -50,6 +50,14 @@ Deno.serve(async (req) => {
     const webhookUrl = Deno.env.get("N8N_WEBHOOK_URL");
     const apiKey = Deno.env.get("N8N_DASHBOARD_API_KEY");
 
+    if (!webhookUrl || !apiKey) {
+      console.error("Missing required environment variables:", {
+        hasWebhookUrl: !!webhookUrl,
+        hasApiKey: !!apiKey,
+      });
+      throw new Error("Server configuration error: Missing N8N credentials");
+    }
+
     console.info(`Calling N8N verify endpoint for phone: ${phoneNumber.substring(0, 4)}****`);
 
     // Verify code with n8n
