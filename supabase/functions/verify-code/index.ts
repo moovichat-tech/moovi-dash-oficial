@@ -98,10 +98,13 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
 
-    // Create or sign in user using phone as email
+    // Create or sign in user using phone as email with password based on JID
     const email = `${phoneNumber}@moovi.app`;
+    const password = `moovi_${data.jid}`; // Password based on JID
+    
     const { data: authData, error: authError } = await supabaseClient.auth.admin.createUser({
       email,
+      password,
       email_confirm: true,
       user_metadata: {
         phone_number: phoneNumber,
@@ -109,33 +112,42 @@ Deno.serve(async (req) => {
       },
     });
 
-    if (authError && !authError.message.includes("already registered")) {
+    // If user already exists, update metadata and password
+    if (authError && authError.message.includes("already registered")) {
+      const { data: { users } } = await supabaseClient.auth.admin.listUsers();
+      const existingUser = users.find((u) => u.email === email);
+      
+      if (existingUser) {
+        console.info(`Updating existing user: ${existingUser.id}`);
+        await supabaseClient.auth.admin.updateUserById(existingUser.id, {
+          password, // Update password
+          user_metadata: {
+            phone_number: phoneNumber,
+            jid: data.jid,
+          },
+        });
+        
+        return new Response(
+          JSON.stringify({
+            success: true,
+            jid: data.jid,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+    }
+
+    if (authError) {
+      console.error("Error creating user:", authError);
       throw authError;
     }
 
-    // Generate session for user
-    const userId =
-      authData?.user?.id || (await supabaseClient.auth.admin.listUsers()).data.users.find((u) => u.email === email)?.id;
-
-    if (!userId) {
-      throw new Error("Failed to create or find user");
-    }
-
-    const { data: sessionData, error: sessionError } = await supabaseClient.auth.admin.generateLink({
-      type: "magiclink",
-      email,
-    });
-
-    if (sessionError) {
-      throw sessionError;
-    }
+    console.info(`User created successfully: ${authData.user.id}`);
 
     return new Response(
       JSON.stringify({
         success: true,
         jid: data.jid,
-        session: sessionData,
-        userId,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );

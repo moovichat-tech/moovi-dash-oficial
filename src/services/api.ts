@@ -456,25 +456,22 @@ export async function verifyCode(
       );
     }
     
-    // Sign in with the session from edge function
-    const { error: signInError } = await supabase.auth.signInWithPassword({
+    // Sign in with password based on JID
+    const { data: sessionData, error: signInError } = await supabase.auth.signInWithPassword({
       email: `${phoneNumber}@moovi.app`,
-      password: verifyResponse.session.properties.hashed_token,
+      password: `moovi_${verifyResponse.jid}`, // Password based on JID
     });
 
     if (signInError) {
-      // If sign in fails, create the user
-      const { data: session } = await supabase.auth.getSession();
-      if (!session) {
-        throw new ApiError('Falha ao criar sessão');
-      }
+      console.error('Erro ao fazer login:', signInError);
+      throw new ApiError('Falha ao autenticar. Tente novamente.', 401);
     }
 
     console.log('✅ Login bem-sucedido:', verifyResponse.jid);
     
     return {
       jid: verifyResponse.jid,
-      token: verifyResponse.session.properties.hashed_token,
+      token: sessionData.session?.access_token || '', // Real session token
     };
   } catch (error) {
     if (error instanceof ApiError) {
