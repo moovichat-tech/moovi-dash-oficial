@@ -64,7 +64,7 @@ Deno.serve(async (req) => {
     const response = await fetch(endpoint, {
       method: "POST",
       headers: {
-        "X-N8N-API-KEY": apiKey,
+        Authorization: apiKey,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ telefone: phoneNumber }),
