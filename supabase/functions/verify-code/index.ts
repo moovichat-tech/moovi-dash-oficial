@@ -183,9 +183,23 @@ Deno.serve(async (req) => {
         
         console.info(`[SECURITY] UPDATE completed successfully for user: ${existingUser.id}`);
         
+        // Sign in the user and return session
+        const { data: sessionData, error: signInError } = await supabaseClient.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (signInError) {
+          console.error("[SECURITY] Error signing in user after update:", signInError);
+          throw signInError;
+        }
+
         return new Response(
           JSON.stringify({
             success: true,
+            jid: data.jid,
+            access_token: sessionData.session?.access_token,
+            refresh_token: sessionData.session?.refresh_token,
           }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
@@ -198,9 +212,23 @@ Deno.serve(async (req) => {
 
     console.info(`[SECURITY] CREATE operation completed - User ID: ${authData.user.id}, Phone: ${phoneNumber.substring(0, 4)}****`);
 
+    // Sign in the new user and return session
+    const { data: sessionData, error: signInError } = await supabaseClient.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (signInError) {
+      console.error("[SECURITY] Error signing in new user:", signInError);
+      throw signInError;
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
+        jid: data.jid,
+        access_token: sessionData.session?.access_token,
+        refresh_token: sessionData.session?.refresh_token,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
