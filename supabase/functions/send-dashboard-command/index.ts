@@ -24,17 +24,22 @@ Deno.serve(async (req) => {
       throw new Error("Missing authorization header");
     }
 
-    const supabaseClient = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_ANON_KEY") ?? "", {
-      global: { headers: { Authorization: authHeader } },
-    });
+    // Extract token from "Bearer <token>"
+    const token = authHeader.replace('Bearer ', '');
 
-    // Verify user session
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "", 
+      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+    );
+
+    // Verify user session by passing token explicitly
     const {
       data: { user },
       error: authError,
-    } = await supabaseClient.auth.getUser();
+    } = await supabaseClient.auth.getUser(token);
 
     if (authError || !user) {
+      console.error("Auth error:", authError);
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
