@@ -5,10 +5,6 @@ import { z } from 'zod';
 
 const IS_DEV = import.meta.env.DEV;
 
-// 🔓 MODO DESENVOLVIMENTO - Controle separado para autenticação e dados
-const IS_DEV_BYPASS_AUTH = false;  // Autenticação via n8n (WhatsApp)
-const IS_DEV_BYPASS_DATA = false;  // Dados via n8n
-
 // Dados mockados para desenvolvimento
 const MOCK_DASHBOARD_DATA: DashboardData = {
   jid: 'dev@s.whatsapp.net',
@@ -238,14 +234,6 @@ function processRawDashboardData(raw: any, jid: string): DashboardData {
  * @throws ApiError com isNotFound=true quando 404
  */
 export async function getDashboardData(phoneNumber: string, jid?: string): Promise<DashboardData> {
-  if (IS_DEV_BYPASS_DATA) {
-    await new Promise(resolve => setTimeout(resolve, 800));
-    if (IS_DEV) {
-      console.log('🔓 DEV MODE: Retornando dados mockados');
-    }
-    return { ...MOCK_DASHBOARD_DATA, jid: jid || phoneNumber };
-  }
-
   try {
     const { data: dashboardResponse, error } = await supabase.functions.invoke('get-dashboard-data', {
       method: 'GET',
@@ -376,14 +364,6 @@ export async function sendVerificationCode(phoneNumber: string): Promise<void> {
     );
   }
 
-  if (IS_DEV_BYPASS_AUTH) {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    if (IS_DEV) {
-      console.log('🔓 DEV MODE: Código de verificação simulado');
-    }
-    return;
-  }
-
   try {
     const { error } = await supabase.functions.invoke('send-verification-code', {
       body: { phoneNumber },
@@ -426,19 +406,6 @@ export async function verifyCode(
       `Muitas tentativas. Tente novamente em ${resetTime} minutos.`,
       429
     );
-  }
-
-  if (IS_DEV_BYPASS_AUTH) {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const mockJid = `${phoneNumber.replace(/\D/g, '')}@s.whatsapp.net`;
-    const mockToken = `dev_token_${Date.now()}`;
-    
-    if (IS_DEV) {
-      console.log('🔓 DEV MODE: Login aceito');
-    }
-    
-    return { jid: mockJid, token: mockToken };
   }
 
   try {
