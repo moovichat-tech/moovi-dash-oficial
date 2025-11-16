@@ -71,7 +71,7 @@ export function PhoneLogin({ onSuccess }: PhoneLoginProps) {
     if (!phoneRegex.test(phoneOnly)) {
       toast({
         title: "Telefone inválido",
-        description: "Digite um número de celular brasileiro válido com DDD.",
+        description: "Digite seu número do whatsapp brasileiro válido com DDD.",
         variant: "destructive",
       });
       return;
@@ -134,7 +134,7 @@ export function PhoneLogin({ onSuccess }: PhoneLoginProps) {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/10 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <img src={mooviLogo} alt="Moovi" className="mx-auto mb-4" style={{ height: '60px' }} />
+          <img src={mooviLogo} alt="Moovi" className="mx-auto mb-4" style={{ height: "60px" }} />
           <CardTitle className="text-2xl">Bem-vindo ao Moovi.dash</CardTitle>
           <CardDescription>
             {step === "phone"
