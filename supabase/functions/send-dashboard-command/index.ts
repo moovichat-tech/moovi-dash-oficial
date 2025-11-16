@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { checkRateLimit, getClientIP } from "../_shared/rateLimit.ts";
+import { z } from "https://esm.sh/zod@3.22.4";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,6 +12,12 @@ const RATE_LIMIT = {
   maxRequests: 10,
   windowMs: 60 * 1000, // 1 minute
 };
+
+// Input validation schema
+const commandSchema = z.string()
+  .min(1, 'Comando não pode estar vazio')
+  .max(500, 'Comando muito longo')
+  .regex(/^[a-zA-Z0-9\s\$\.,!?áéíóúâêôãõçÁÉÍÓÚÂÊÔÃÕÇ\-]+$/, 'Comando contém caracteres inválidos');
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -76,7 +83,23 @@ Deno.serve(async (req) => {
     const { command } = await req.json();
 
     if (!command) {
-      throw new Error("Command is required");
+      return new Response(
+        JSON.stringify({ error: "Comando é obrigatório" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Server-side input validation
+    try {
+      commandSchema.parse(command);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        console.warn(`[SECURITY] Validation failed: ${error.errors[0].message}`);
+        return new Response(
+          JSON.stringify({ error: error.errors[0].message }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     const webhookUrl = Deno.env.get("N8N_WEBHOOK_URL");
