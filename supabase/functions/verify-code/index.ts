@@ -113,19 +113,40 @@ Deno.serve(async (req) => {
     });
 
     // If user already exists, update metadata and password
-    if (authError && authError.message.includes("already registered")) {
-      const { data: { users } } = await supabaseClient.auth.admin.listUsers();
-      const existingUser = users.find((u) => u.email === email);
-      
-      if (existingUser) {
+    if (authError) {
+      if (authError.message.includes("already registered") || authError.code === "email_exists") {
+        console.info(`User already exists for email: ${email}, updating metadata...`);
+        
+        // Get user by email
+        const { data: { users }, error: listError } = await supabaseClient.auth.admin.listUsers();
+        
+        if (listError) {
+          console.error("Error listing users:", listError);
+          throw listError;
+        }
+        
+        const existingUser = users.find((u) => u.email === email);
+        
+        if (!existingUser) {
+          console.error(`User not found for email: ${email} despite email_exists error`);
+          throw new Error("User authentication failed");
+        }
+        
         console.info(`Updating existing user: ${existingUser.id}`);
-        await supabaseClient.auth.admin.updateUserById(existingUser.id, {
+        const { error: updateError } = await supabaseClient.auth.admin.updateUserById(existingUser.id, {
           password, // Update password
           user_metadata: {
             phone_number: phoneNumber,
             jid: data.jid,
           },
         });
+        
+        if (updateError) {
+          console.error("Error updating user:", updateError);
+          throw updateError;
+        }
+        
+        console.info(`User updated successfully: ${existingUser.id}`);
         
         return new Response(
           JSON.stringify({
@@ -135,9 +156,8 @@ Deno.serve(async (req) => {
           { headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
-    }
-
-    if (authError) {
+      
+      // If it's a different error, throw it
       console.error("Error creating user:", authError);
       throw authError;
     }
