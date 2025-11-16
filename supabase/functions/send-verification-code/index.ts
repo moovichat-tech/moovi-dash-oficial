@@ -77,11 +77,9 @@ Deno.serve(async (req) => {
       console.error("N8N error response:", {
         status: response.status,
         statusText: response.statusText,
-        body: errorBody.substring(0, 200), // Log first 200 chars
+        body: errorBody.substring(0, 200),
       });
-      throw new Error(
-        `N8N webhook failed (${response.status}): ${response.statusText}. Verifique a configuração do webhook N8N.`,
-      );
+      throw new Error("Serviço de verificação temporariamente indisponível");
     }
 
     return new Response(JSON.stringify({ success: true }), {
@@ -89,8 +87,10 @@ Deno.serve(async (req) => {
     });
   } catch (error) {
     console.error("Error in send-verification-code:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    const userMessage = error instanceof Error && error.message.includes("indisponível")
+      ? error.message
+      : "Erro ao enviar código de verificação";
+    return new Response(JSON.stringify({ error: userMessage }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

@@ -92,6 +92,8 @@ Deno.serve(async (req) => {
 
     const data = await response.json();
 
+    console.info(`[SECURITY] Phone verification successful for: ${phoneNumber.substring(0, 4)}****`);
+
     // Create Supabase client
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -101,6 +103,8 @@ Deno.serve(async (req) => {
     // Create or sign in user using phone as email with password based on JID
     const email = `${phoneNumber}@moovi.app`;
     const password = `moovi_${data.jid}`; // Password based on JID
+    
+    console.info(`[SECURITY] Attempting user operation for email: ${email}`);
     
     const { data: authData, error: authError } = await supabaseClient.auth.admin.createUser({
       email,
@@ -115,7 +119,7 @@ Deno.serve(async (req) => {
     // If user already exists, update metadata and password
     if (authError) {
       if (authError.message.includes("already registered") || authError.code === "email_exists") {
-        console.info(`User already exists for email: ${email}, updating metadata...`);
+        console.info(`[SECURITY] User already exists for email: ${email}, updating metadata...`);
         
         // Get user by email
         const { data: { users }, error: listError } = await supabaseClient.auth.admin.listUsers();
@@ -132,7 +136,7 @@ Deno.serve(async (req) => {
           throw new Error("User authentication failed");
         }
         
-        console.info(`Updating existing user: ${existingUser.id}`);
+        console.info(`[SECURITY] UPDATE operation - User ID: ${existingUser.id}, Phone: ${phoneNumber.substring(0, 4)}****`);
         const { error: updateError } = await supabaseClient.auth.admin.updateUserById(existingUser.id, {
           password, // Update password
           user_metadata: {
@@ -142,16 +146,15 @@ Deno.serve(async (req) => {
         });
         
         if (updateError) {
-          console.error("Error updating user:", updateError);
+          console.error("[SECURITY] Error updating user:", updateError);
           throw updateError;
         }
         
-        console.info(`User updated successfully: ${existingUser.id}`);
+        console.info(`[SECURITY] UPDATE completed successfully for user: ${existingUser.id}`);
         
         return new Response(
           JSON.stringify({
             success: true,
-            jid: data.jid,
           }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
@@ -162,19 +165,17 @@ Deno.serve(async (req) => {
       throw authError;
     }
 
-    console.info(`User created successfully: ${authData.user.id}`);
+    console.info(`[SECURITY] CREATE operation completed - User ID: ${authData.user.id}, Phone: ${phoneNumber.substring(0, 4)}****`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        jid: data.jid,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (error) {
     console.error("Error in verify-code:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    return new Response(JSON.stringify({ error: "Erro ao processar verificação" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

@@ -102,7 +102,13 @@ Deno.serve(async (req) => {
     }
 
     if (!response.ok) {
-      throw new Error(`Failed to send command: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error("N8N webhook failed:", {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorText,
+      });
+      throw new Error("Serviço temporariamente indisponível");
     }
 
     const data = await response.json();
@@ -110,8 +116,11 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify(data), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
     console.error("Error in send-dashboard-command:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    const userMessage = error instanceof Error && error.message.includes("indisponível")
+      ? error.message
+      : "Erro ao enviar comando";
+    
+    return new Response(JSON.stringify({ error: userMessage }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

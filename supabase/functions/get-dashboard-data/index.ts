@@ -100,8 +100,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify(data), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (error) {
     console.error("Error in get-dashboard-data:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    return new Response(JSON.stringify({ error: errorMessage }), {
+    return new Response(JSON.stringify({ error: "Erro ao buscar dados do dashboard" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
