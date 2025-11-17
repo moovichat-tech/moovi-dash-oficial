@@ -187,10 +187,13 @@ function processRawDashboardData(raw: any, jid: string): DashboardData {
   const metas = Array.isArray(raw.metas_financeiras)
     ? raw.metas_financeiras.map((m: any) => ({
         id: m.id,
-        nome: m.descricao,
-        valor_alvo: m.valor_total,
-        valor_atual: m.valor_guardado,
-        data_alvo: m.prazo,
+        descricao: m.descricao,
+        valor_total: m.valor_total,
+        valor_guardado: m.valor_guardado,
+        prazo: m.prazo,
+        recorrencia: m.recorrencia ?? null,
+        valor_mensal: m.valor_mensal ?? null,
+        categoria: m.categoria,
       }))
     : Array.isArray(raw.metas) ? raw.metas : [];
 
