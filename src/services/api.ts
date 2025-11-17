@@ -75,7 +75,7 @@ const MOCK_DASHBOARD_DATA: DashboardData = {
     { id: '5', nome: 'Freelance', tipo: 'receita', cor: '#14b8a6' },
   ],
   metas: [
-    { id: '1', nome: 'Emergência', valor_alvo: 10000.00, valor_atual: 5420.50, data_alvo: '2025-12-31' },
+    { id: '1', descricao: 'Emergência', valor_total: 10000.00, valor_guardado: 5420.50, prazo: '2025-12-31', recorrencia: null, valor_mensal: null },
   ],
   recorrencias: [
     { id: '1', descricao: 'Salário', valor: 8500.00, tipo: 'receita', categoria: 'Salário', frequencia: 'mensal', proxima_data: '2025-12-05', ativo: true },
