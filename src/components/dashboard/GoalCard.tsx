@@ -12,11 +12,23 @@ interface GoalCardProps {
 }
 
 export function GoalCard({ goal }: GoalCardProps) {
-  const progress = Math.min(100, (goal.valor_atual / goal.valor_alvo) * 100);
-  const daysRemaining = differenceInDays(new Date(goal.data_alvo), new Date());
+  const isRecurringGoal = goal.recorrencia === 'mensal';
+  
+  const progress = isRecurringGoal
+    ? Math.min(100, (goal.valor_guardado / (goal.valor_mensal || 1)) * 100)
+    : Math.min(100, (goal.valor_guardado / (goal.valor_total || 1)) * 100);
+  
+  const daysRemaining = !isRecurringGoal && goal.prazo 
+    ? differenceInDays(new Date(goal.prazo), new Date())
+    : null;
 
-  const status =
-    progress >= 100 ? 'completed' : daysRemaining < 0 ? 'delayed' : 'in_progress';
+  const status = isRecurringGoal 
+    ? 'recurring'
+    : progress >= 100 
+      ? 'completed' 
+      : (daysRemaining !== null && daysRemaining < 0) 
+        ? 'delayed' 
+        : 'in_progress';
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -50,10 +62,18 @@ export function GoalCard({ goal }: GoalCardProps) {
                 >
                   <Target className="h-4 w-4 flex-shrink-0 text-primary" />
                 </motion.div>
-                <span className="truncate">{goal.nome}</span>
+                <span className="truncate">{goal.descricao}</span>
               </CardTitle>
               <CardDescription className="mt-1">
-                {formatCurrency(goal.valor_atual)} de {formatCurrency(goal.valor_alvo)}
+                {isRecurringGoal ? (
+                  <>
+                    {formatCurrency(goal.valor_guardado)} de {formatCurrency(goal.valor_mensal || 0)} (mensal)
+                  </>
+                ) : (
+                  <>
+                    {formatCurrency(goal.valor_guardado)} de {formatCurrency(goal.valor_total || 0)}
+                  </>
+                )}
               </CardDescription>
             </div>
             
@@ -68,6 +88,8 @@ export function GoalCard({ goal }: GoalCardProps) {
                     ? 'default'
                     : status === 'delayed'
                     ? 'destructive'
+                    : status === 'recurring'
+                    ? 'outline'
                     : 'secondary'
                 }
                 className="flex-shrink-0"
@@ -76,6 +98,8 @@ export function GoalCard({ goal }: GoalCardProps) {
                   ? '✓ Concluída'
                   : status === 'delayed'
                   ? '⚠ Atrasada'
+                  : status === 'recurring'
+                  ? '🔄 Recorrente'
                   : '→ Em andamento'}
               </Badge>
             </motion.div>
@@ -106,18 +130,31 @@ export function GoalCard({ goal }: GoalCardProps) {
             </motion.div>
           )}
 
-          <motion.p 
-            className="text-xs text-muted-foreground"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-          >
-            {daysRemaining > 0
-              ? `${daysRemaining} dia${daysRemaining !== 1 ? 's' : ''} restante${daysRemaining !== 1 ? 's' : ''}`
-              : daysRemaining === 0
-              ? 'Vence hoje'
-              : `Atrasada há ${Math.abs(daysRemaining)} dia${Math.abs(daysRemaining) !== 1 ? 's' : ''}`}
-          </motion.p>
+          {!isRecurringGoal && daysRemaining !== null && (
+            <motion.p 
+              className="text-xs text-muted-foreground"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+            >
+              {daysRemaining > 0
+                ? `${daysRemaining} dia${daysRemaining !== 1 ? 's' : ''} restante${daysRemaining !== 1 ? 's' : ''}`
+                : daysRemaining === 0
+                ? 'Vence hoje'
+                : `Atrasada há ${Math.abs(daysRemaining)} dia${Math.abs(daysRemaining) !== 1 ? 's' : ''}`}
+            </motion.p>
+          )}
+
+          {isRecurringGoal && (
+            <motion.p 
+              className="text-xs text-muted-foreground"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+            >
+              Meta mensal • Renova automaticamente
+            </motion.p>
+          )}
         </CardContent>
       </Card>
     </motion.div>

@@ -29,10 +29,12 @@ export interface Category {
 
 export interface Goal {
   id: string;
-  nome: string;
-  valor_alvo: number;
-  valor_atual: number;
-  data_alvo: string; // ISO date
+  descricao: string;
+  valor_total: number | null;
+  valor_guardado: number;
+  prazo: string | null; // ISO date
+  recorrencia: 'mensal' | null;
+  valor_mensal: number | null;
   categoria?: string;
 }
 
