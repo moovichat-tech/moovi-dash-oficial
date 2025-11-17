@@ -231,7 +231,7 @@ export function TransactionsList({ transactions }: TransactionsListProps) {
                       }`}
                     >
                       {transaction.tipo === 'receita' ? '+' : '-'}
-                      {formatCurrency(transaction.valor)}
+                      {formatCurrency(Math.abs(transaction.valor))}
                     </span>
                   </div>
                   
@@ -296,8 +296,8 @@ export function TransactionsList({ transactions }: TransactionsListProps) {
                               : 'text-destructive font-semibold'
                           }
                         >
-                          {transaction.tipo === 'receita' ? '+' : '-'}
-                          {formatCurrency(transaction.valor)}
+                          {transaction.valor > 0 ? '+' : '-'}
+                          {formatCurrency(Math.abs(transaction.valor))}
                         </span>
                       </TableCell>
                     </TableRow>
