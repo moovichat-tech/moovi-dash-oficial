@@ -227,10 +227,10 @@ export function TransactionsList({ transactions }: TransactionsListProps) {
                     </div>
                     <span
                       className={`font-semibold whitespace-nowrap ${
-                        transaction.tipo === 'receita' ? 'text-success' : 'text-destructive'
+                        transaction.valor >= 0 ? 'text-success' : 'text-destructive'
                       }`}
                     >
-                      {transaction.tipo === 'receita' ? '+' : '-'}
+                      {transaction.valor > 0 ? '+' : '-'}
                       {formatCurrency(Math.abs(transaction.valor))}
                     </span>
                   </div>
@@ -291,7 +291,7 @@ export function TransactionsList({ transactions }: TransactionsListProps) {
                       <TableCell className="text-right">
                         <span
                           className={
-                            transaction.tipo === 'receita'
+                            transaction.valor >= 0
                               ? 'text-success font-semibold'
                               : 'text-destructive font-semibold'
                           }
