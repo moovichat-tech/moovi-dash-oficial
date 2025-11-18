@@ -218,7 +218,7 @@ export function TransactionsList({ transactions }: TransactionsListProps) {
                   {/* Header do Card */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
-                      {transaction.tipo === 'receita' ? (
+                      {transaction.valor >= 0 ? (
                         <TrendingUp className="h-4 w-4 text-success flex-shrink-0" />
                       ) : (
                         <TrendingDown className="h-4 w-4 text-destructive flex-shrink-0" />
@@ -277,7 +277,7 @@ export function TransactionsList({ transactions }: TransactionsListProps) {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {transaction.tipo === 'receita' ? (
+                          {transaction.valor >= 0 ? (
                             <TrendingUp className="h-4 w-4 text-success" />
                           ) : (
                             <TrendingDown className="h-4 w-4 text-destructive" />
