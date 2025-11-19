@@ -8,8 +8,6 @@ export function useDashboard(jid: string | null, phoneNumber: string | null) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isNotFound, setIsNotFound] = useState(false);
-  const [isProcessingCommand, setIsProcessingCommand] = useState(false);
-
   const loadDashboard = useCallback(async () => {
     if (!phoneNumber) {
       setLoading(false);
@@ -48,30 +46,40 @@ export function useDashboard(jid: string | null, phoneNumber: string | null) {
       if (!phoneNumber) return;
 
       try {
-        setIsProcessingCommand(true);
-        
-        // Enviar comando
+        // 🚀 Enviar comando (retorna rápido)
         await postDashboardCommand(phoneNumber, command);
         
-        // ⏱️ AGUARDAR 2.5 segundos para n8n processar
-        await new Promise(resolve => setTimeout(resolve, 2500));
-        
-        // Recarregar dados atualizados
-        await loadDashboard();
-        
+        // ✅ Toast de sucesso IMEDIATO
         toast({
-          title: 'Comando processado ✅',
-          description: 'Seus dados foram atualizados com sucesso.',
+          title: 'Comando enviado ✅',
+          description: 'Estamos processando sua solicitação. O dashboard será atualizado em breve.',
         });
+
+        // 🔄 Processar em BACKGROUND (não bloqueia)
+        setTimeout(async () => {
+          try {
+            await loadDashboard();
+            toast({
+              title: 'Dashboard atualizado 🎉',
+              description: 'Seus dados foram atualizados com sucesso.',
+            });
+          } catch (err) {
+            console.error('Erro ao atualizar dashboard:', err);
+            toast({
+              title: 'Falha na atualização',
+              description: 'Tente recarregar manualmente.',
+              variant: 'destructive',
+            });
+          }
+        }, 2500);
+
       } catch (err) {
         toast({
-          title: 'Erro ao processar comando',
+          title: 'Erro ao enviar comando',
           description: err instanceof Error ? err.message : 'Erro desconhecido',
           variant: 'destructive',
         });
         throw err;
-      } finally {
-        setIsProcessingCommand(false);
       }
     },
     [phoneNumber, loadDashboard]
@@ -82,7 +90,6 @@ export function useDashboard(jid: string | null, phoneNumber: string | null) {
     loading,
     error,
     isNotFound,
-    isProcessingCommand,
     refresh: loadDashboard,
     sendCommand,
   };
