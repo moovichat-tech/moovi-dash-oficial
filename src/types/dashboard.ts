@@ -17,6 +17,7 @@ export interface Account {
   tipo: 'conta_corrente' | 'poupanca' | 'cartao_credito' | 'investimento';
   saldo: number;
   limite?: number; // Para cartões de crédito
+  dia_vencimento?: number; // Dia do mês (1-31) para vencimento de fatura
 }
 
 export interface Category {
