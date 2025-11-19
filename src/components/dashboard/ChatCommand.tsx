@@ -21,12 +21,15 @@ export function ChatCommand({ onSendCommand, disabled, isProcessing }: ChatComma
     
     if (!command.trim()) return;
 
+    const commandToSend = command;
+    setCommand(''); // ✅ Limpa IMEDIATAMENTE (feedback visual)
+
     setLoading(true);
     try {
-      await onSendCommand(command);
-      setCommand(''); // Limpa o input após sucesso
+      await onSendCommand(commandToSend);
     } catch (error) {
-      // Erro já tratado no hook useDashboard
+      // Se der erro, restaura o comando para o usuário tentar novamente
+      setCommand(commandToSend);
     } finally {
       setLoading(false);
     }

@@ -41,7 +41,10 @@ export function FloatingActionButton({ onSendCommand }: FloatingActionButtonProp
               try {
                 setIsProcessing(true);
                 await onSendCommand(command);
-                setOpen(false);
+                setOpen(false); // ✅ Fecha IMEDIATAMENTE após envio
+              } catch (err) {
+                // Se der erro no envio, NÃO fecha o modal
+                console.error('Erro ao enviar comando:', err);
               } finally {
                 setIsProcessing(false);
               }
