@@ -10,10 +10,7 @@ export function useTheme() {
     const stored = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
     if (stored) return stored;
 
-    // Fallback para preferência do sistema
-    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return 'dark';
-    }
+    // Sempre retorna light como padrão na primeira visita
     return 'light';
   });
 
