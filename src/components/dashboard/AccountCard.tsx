@@ -1,4 +1,4 @@
-import { CreditCard, Wallet, PiggyBank, TrendingUp, AlertTriangle } from 'lucide-react';
+import { CreditCard, Wallet, PiggyBank, TrendingUp, AlertTriangle, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -52,6 +52,31 @@ export function AccountCard({ account }: AccountCardProps) {
   };
 
   const isCritical = usagePercent >= 90;
+
+  const getDaysUntilDue = (dueDay: number): number => {
+    const today = new Date();
+    const currentDay = today.getDate();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    
+    let dueDate = new Date(currentYear, currentMonth, dueDay);
+    
+    if (currentDay > dueDay) {
+      dueDate = new Date(currentYear, currentMonth + 1, dueDay);
+    }
+    
+    const diffTime = dueDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays;
+  };
+
+  const getDueDateColor = (dueDay: number): string => {
+    const daysUntil = getDaysUntilDue(dueDay);
+    if (daysUntil <= 2) return 'text-destructive';
+    if (daysUntil <= 5) return 'text-warning';
+    return 'text-muted-foreground';
+  };
 
   return (
     <motion.div
@@ -117,33 +142,58 @@ export function AccountCard({ account }: AccountCardProps) {
               <Progress value={Math.min(usagePercent, 100)} className="h-2" />
 
               <p className="text-xs text-muted-foreground">{usagePercent.toFixed(1)}% utilizado</p>
-
-              {isCritical && (
-                <motion.div
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ 
-                    opacity: 1, 
-                    y: 0,
-                    scale: [1, 1.02, 1],
-                  }}
-                  transition={{
-                    opacity: { duration: 0.3 },
-                    scale: {
-                      repeat: Infinity,
-                      duration: 2,
-                    }
-                  }}
-                >
-                  <Alert variant="destructive" className="py-2">
-                    <AlertTriangle className="h-4 w-4" />
-                    <AlertDescription className="text-xs">
-                      Atenção! Você está próximo do limite.
-                    </AlertDescription>
-                  </Alert>
-                </motion.div>
-              )}
             </motion.div>
           </>
+        )}
+
+        {account.dia_vencimento && account.tipo === 'cartao_credito' && (
+          <>
+            <Separator />
+            <motion.div
+              className="flex items-center gap-2 text-sm"
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <div className="flex-1">
+                <span className="text-muted-foreground">Vence dia </span>
+                <span className={`font-semibold ${getDueDateColor(account.dia_vencimento)}`}>
+                  {account.dia_vencimento}
+                </span>
+                {getDaysUntilDue(account.dia_vencimento) <= 5 && (
+                  <span className={`ml-1 text-xs ${getDueDateColor(account.dia_vencimento)}`}>
+                    ({getDaysUntilDue(account.dia_vencimento)} dias)
+                  </span>
+                )}
+              </div>
+            </motion.div>
+          </>
+        )}
+
+        {account.limite && isCritical && (
+          <motion.div
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ 
+              opacity: 1, 
+              y: 0,
+              scale: [1, 1.02, 1],
+            }}
+            transition={{
+              opacity: { duration: 0.3 },
+              scale: {
+                repeat: Infinity,
+                duration: 2,
+              }
+            }}
+          >
+            <Alert variant="destructive" className="py-2">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription className="text-xs">
+                Atenção! Você está próximo do limite.
+              </AlertDescription>
+            </Alert>
+          </motion.div>
         )}
       </CardContent>
     </Card>
