@@ -15,6 +15,7 @@ const Index = () => {
   const [currentView, setCurrentView] = useState<ViewType>('dashboard');
   const [authStep, setAuthStep] = useState<AuthStep>('login');
   const [pendingPhoneNumber, setPendingPhoneNumber] = useState<string>('');
+  const [pendingTokens, setPendingTokens] = useState<{ access_token: string; refresh_token: string } | null>(null);
   const [isResetMode, setIsResetMode] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -39,24 +40,28 @@ const Index = () => {
       setUser(session?.user ?? null);
       setAuthStep('login');
       setPendingPhoneNumber('');
+      setPendingTokens(null);
       setIsResetMode(false);
     });
   };
 
-  const handleWhatsAppSuccess = (jid: string, token: string, phoneNumber: string, needsPasswordSetup: boolean) => {
+  const handleWhatsAppSuccess = async (jid: string, token: string, phoneNumber: string, needsPasswordSetup: boolean, refreshToken: string) => {
     setPendingPhoneNumber(phoneNumber);
     
     if (needsPasswordSetup || isResetMode) {
-      // Go to password registration
+      // Guardar tokens para usar após cadastro de senha
+      setPendingTokens({ access_token: token, refresh_token: refreshToken });
       setAuthStep('register-password');
     } else {
-      // Already has password, go directly to dashboard
+      // Já tem senha - estabelecer sessão e ir para dashboard
+      await supabase.auth.setSession({ access_token: token, refresh_token: refreshToken });
       handleLoginSuccess();
     }
   };
 
   const handlePasswordRegistered = () => {
-    // Password created, go to dashboard
+    // Senha criada, sessão já foi estabelecida no RegisterPassword
+    setPendingTokens(null);
     handleLoginSuccess();
   };
 
@@ -74,6 +79,7 @@ const Index = () => {
     setAuthStep('login');
     setIsResetMode(false);
     setPendingPhoneNumber('');
+    setPendingTokens(null);
   };
 
   const handleLogout = async () => {
@@ -107,6 +113,7 @@ const Index = () => {
       return (
         <RegisterPassword
           phoneNumber={pendingPhoneNumber}
+          pendingTokens={pendingTokens}
           onSuccess={handlePasswordRegistered}
           onBack={handleBackToLogin}
         />

@@ -76,12 +76,11 @@ export function LoginPage({ onSuccess, onFirstLogin, onForgotPassword }: LoginPa
 
       if (!exists || !hasPassword) {
         toast({
-          title: "Primeiro acesso necessário",
-          description: "Você precisa fazer o primeiro login via WhatsApp para cadastrar sua senha.",
+          title: "Conta não encontrada",
+          description: "Você ainda não tem login. Clique no botão 'Primeiro Login' para criar sua conta.",
           variant: "destructive",
         });
-        // Redirect to WhatsApp flow
-        onFirstLogin();
+        // NÃO redirecionar - apenas mostrar a mensagem
         return;
       }
 
@@ -104,10 +103,10 @@ export function LoginPage({ onSuccess, onFirstLogin, onForgotPassword }: LoginPa
       if (error.needsWhatsApp) {
         toast({
           title: "Senha não cadastrada",
-          description: "Faça o primeiro login via WhatsApp para criar sua senha.",
+          description: "Você ainda não tem senha. Clique no botão 'Primeiro Login' para criar sua conta.",
           variant: "destructive",
         });
-        onFirstLogin();
+        // NÃO redirecionar - apenas mostrar a mensagem
         return;
       }
 

@@ -401,7 +401,7 @@ export async function sendVerificationCode(phoneNumber: string): Promise<void> {
 export async function verifyCode(
   phoneNumber: string,
   code: string
-): Promise<{ jid: string; token: string; needsPasswordSetup: boolean }> {
+): Promise<{ jid: string; token: string; refreshToken: string; needsPasswordSetup: boolean }> {
   // Rate limiting: max 5 attempts per 15 minutes per phone number
   const rateLimitKey = `verify-code-${phoneNumber}`;
   if (!checkRateLimit(rateLimitKey, { maxRequests: 5, windowMs: 900000 })) {
@@ -431,22 +431,13 @@ export async function verifyCode(
       throw new ApiError('Resposta inválida do servidor', 500);
     }
 
-    // Set the session directly from the edge function response
-    const { error: sessionError } = await supabase.auth.setSession({
-      access_token: verifyResponse.access_token,
-      refresh_token: verifyResponse.refresh_token,
-    });
-
-    if (sessionError) {
-      console.error('Erro ao definir sessão:', sessionError);
-      throw new ApiError('Falha ao autenticar. Tente novamente.', 401);
-    }
-
-    console.log('✅ Login bem-sucedido:', verifyResponse.jid);
+    // NÃO estabelecer sessão aqui - retornar tokens para controle do Index.tsx
+    console.log('✅ Código verificado:', verifyResponse.jid);
     
     return {
       jid: verifyResponse.jid,
       token: verifyResponse.access_token,
+      refreshToken: verifyResponse.refresh_token,
       needsPasswordSetup: verifyResponse.needsPasswordSetup ?? true,
     };
   } catch (error) {
