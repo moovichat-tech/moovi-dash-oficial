@@ -3,12 +3,14 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { MonthlyComparison as MonthlyData } from '@/types/analytics';
 import { ChartExportButtons } from './ChartExportButtons';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 interface MonthlyComparisonProps {
   data: MonthlyData[];
 }
 
 export function MonthlyComparison({ data }: MonthlyComparisonProps) {
+  const { formatCurrency } = useCurrency();
   const chartRef = useRef<HTMLDivElement>(null);
   
   const chartData = data.map(month => ({
@@ -17,14 +19,6 @@ export function MonthlyComparison({ data }: MonthlyComparisonProps) {
     Despesas: month.despesas,
     Saldo: month.saldo,
   }));
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
 
   return (
     <Card>

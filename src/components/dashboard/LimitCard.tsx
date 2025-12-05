@@ -4,12 +4,14 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Budget } from '@/types/dashboard';
 import { cardVariants, hoverScale } from '@/lib/animations';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 interface LimitCardProps {
   budget: Budget;
 }
 
 export function LimitCard({ budget }: LimitCardProps) {
+  const { formatCurrency } = useCurrency();
   const usagePercent = budget.limite > 0 
     ? Math.min(100, ((budget.gasto_atual || 0) / budget.limite) * 100)
     : 0;
@@ -20,13 +22,6 @@ export function LimitCard({ budget }: LimitCardProps) {
       : usagePercent >= 80
       ? 'text-warning'
       : 'text-success';
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
-  };
 
   const isExceeded = usagePercent >= 100;
 

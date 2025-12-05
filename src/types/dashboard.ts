@@ -1,5 +1,11 @@
 // TypeScript interfaces para o Moovi.dash
 
+export interface UserConfig {
+  nome_assistente: string;
+  moeda: string; // "BRL", "USD", "EUR", etc.
+  fuso_horario: string;
+}
+
 export interface Transaction {
   id: string;
   data: string; // ISO date
@@ -72,6 +78,7 @@ export interface DashboardData {
     receitas: number;
     despesas: number;
   }[];
+  configuracoes_usuario?: UserConfig;
 }
 
 export interface CommandResponse {

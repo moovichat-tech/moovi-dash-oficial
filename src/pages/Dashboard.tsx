@@ -11,6 +11,7 @@ import { NotFoundState } from '@/components/dashboard/NotFoundState';
 import { Skeleton } from '@/components/ui/skeleton';
 import { GoalsPanel } from '@/components/dashboard/GoalsPanel';
 import { AccountsPanel } from '@/components/dashboard/AccountsPanel';
+import { CurrencyProvider } from '@/contexts/CurrencyContext';
 import mooviLogo from '@/assets/moovi-logo-new.png';
 
 interface DashboardProps {
@@ -158,7 +159,7 @@ export default function Dashboard({ jid, phoneNumber, onLogout, onNavigateToAnal
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 md:py-6 space-y-4 md:space-y-6 pb-24">
         {data && (
-          <>
+          <CurrencyProvider currency={data.configuracoes_usuario?.moeda || 'BRL'}>
             <BalanceCards
               saldoTotal={data.saldo_total}
               receitaMensal={data.receita_mensal}
@@ -176,7 +177,7 @@ export default function Dashboard({ jid, phoneNumber, onLogout, onNavigateToAnal
             />
 
             <TransactionsList transactions={data.transacoes || []} />
-          </>
+          </CurrencyProvider>
         )}
       </main>
 

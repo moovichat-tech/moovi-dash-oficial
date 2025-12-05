@@ -6,12 +6,14 @@ import { Badge } from '@/components/ui/badge';
 import { Goal } from '@/types/dashboard';
 import { differenceInDays } from 'date-fns';
 import { cardVariants, hoverScale } from '@/lib/animations';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 interface GoalCardProps {
   goal: Goal;
 }
 
 export function GoalCard({ goal }: GoalCardProps) {
+  const { formatCurrency } = useCurrency();
   const isRecurringGoal = goal.recorrencia === 'mensal';
   
   const progress = isRecurringGoal
@@ -29,13 +31,6 @@ export function GoalCard({ goal }: GoalCardProps) {
       : (daysRemaining !== null && daysRemaining < 0) 
         ? 'delayed' 
         : 'in_progress';
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
-  };
 
   const isNearCompletion = progress >= 80 && progress < 100;
 

@@ -3,12 +3,14 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CategoryTrend } from '@/types/analytics';
 import { ChartExportButtons } from './ChartExportButtons';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 interface CategoryTrendChartProps {
   trends: CategoryTrend[];
 }
 
 export function CategoryTrendChart({ trends }: CategoryTrendChartProps) {
+  const { formatCurrency } = useCurrency();
   const chartRef = useRef<HTMLDivElement>(null);
   
   const chartData = trends[0]?.historico.map((_, index) => {
@@ -22,14 +24,6 @@ export function CategoryTrendChart({ trends }: CategoryTrendChartProps) {
     
     return point;
   }) || [];
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
 
   const colors = [
     'hsl(var(--chart-1))',

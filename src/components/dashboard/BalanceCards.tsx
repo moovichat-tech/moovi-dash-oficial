@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 interface BalanceCardsProps {
   saldoTotal: number;
@@ -8,12 +9,7 @@ interface BalanceCardsProps {
 }
 
 export function BalanceCards({ saldoTotal, receitaMensal, despesaMensal }: BalanceCardsProps) {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
-  };
+  const { formatCurrency } = useCurrency();
 
   const balance = receitaMensal - despesaMensal;
 
