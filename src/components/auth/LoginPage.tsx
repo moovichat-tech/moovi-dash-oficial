@@ -4,10 +4,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Phone, Lock, Eye, EyeOff } from "lucide-react";
+import { Loader2, Lock, Eye, EyeOff } from "lucide-react";
 import { loginWithPassword, checkUserHasPassword } from "@/services/api";
 import { supabase } from "@/integrations/supabase/client";
 import mooviLogo from "@/assets/moovi-logo.png";
+import { CountrySelector } from "./CountrySelector";
+import { countries, Country } from "@/data/countries";
 
 interface LoginPageProps {
   onSuccess: () => void;
@@ -15,32 +17,21 @@ interface LoginPageProps {
   onForgotPassword: () => void;
 }
 
-// Format phone for display with mask
+// Format phone number - just keeps digits
 const formatPhoneNumber = (value: string): string => {
-  let numbers = value.replace(/^\+55\s*\(?\s*/, "").replace(/\D/g, "");
-  numbers = numbers.slice(0, 11);
-
-  if (numbers.length === 0) {
-    return "+55";
-  } else if (numbers.length <= 2) {
-    return `+55 (${numbers}`;
-  } else if (numbers.length <= 6) {
-    return `+55 (${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
-  } else if (numbers.length <= 10) {
-    return `+55 (${numbers.slice(0, 2)}) ${numbers.slice(2, 6)}-${numbers.slice(6)}`;
-  } else {
-    return `+55 (${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
-  }
+  return value.replace(/\D/g, "").slice(0, 15);
 };
 
-// Extract only numbers with 55 prefix
-const extractPhoneNumbers = (formatted: string): string => {
-  const dddAndNumber = formatted.replace(/^\+55\s*\(?\s*/, "").replace(/\D/g, "");
-  return "55" + dddAndNumber;
+// Extract full phone number with country dial code
+const extractPhoneNumbers = (phoneNumber: string, dialCode: string): string => {
+  const cleanDialCode = dialCode.replace(/\D/g, "");
+  const cleanNumber = phoneNumber.replace(/\D/g, "");
+  return cleanDialCode + cleanNumber;
 };
 
 export function LoginPage({ onSuccess, onFirstLogin, onForgotPassword }: LoginPageProps) {
-  const [phoneNumber, setPhoneNumber] = useState("+55");
+  const [selectedCountry, setSelectedCountry] = useState<Country>(countries[0]); // Brasil default
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -48,13 +39,13 @@ export function LoginPage({ onSuccess, onFirstLogin, onForgotPassword }: LoginPa
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const phoneOnly = extractPhoneNumbers(phoneNumber);
+    const fullPhone = extractPhoneNumbers(phoneNumber, selectedCountry.dialCode);
 
-    // Basic validation
-    if (phoneOnly.length < 12 || phoneOnly.length > 13) {
+    // Basic validation: minimum 8 digits
+    if (phoneNumber.length < 8) {
       toast({
         title: "Telefone inválido",
-        description: "Digite um número de telefone válido com DDD.",
+        description: "Digite um número de telefone válido.",
         variant: "destructive",
       });
       return;
@@ -72,7 +63,7 @@ export function LoginPage({ onSuccess, onFirstLogin, onForgotPassword }: LoginPa
     setLoading(true);
     try {
       // First check if user has password set
-      const { hasPassword, exists } = await checkUserHasPassword(phoneOnly);
+      const { hasPassword, exists } = await checkUserHasPassword(fullPhone);
 
       if (!exists || !hasPassword) {
         toast({
@@ -80,12 +71,11 @@ export function LoginPage({ onSuccess, onFirstLogin, onForgotPassword }: LoginPa
           description: "Você ainda não tem login. Clique no botão 'Primeiro Login' para criar sua conta.",
           variant: "destructive",
         });
-        // NÃO redirecionar - apenas mostrar a mensagem
         return;
       }
 
       // Try to login with password
-      const { access_token, refresh_token } = await loginWithPassword(phoneOnly, password);
+      const { access_token, refresh_token } = await loginWithPassword(fullPhone, password);
 
       // Set session in Supabase
       await supabase.auth.setSession({
@@ -109,7 +99,6 @@ export function LoginPage({ onSuccess, onFirstLogin, onForgotPassword }: LoginPa
         return;
       }
 
-      // Check if it's an invalid password error
       const errorMessage = error.message || "";
       const isInvalidPassword =
         errorMessage.toLowerCase().includes("credenciais inválidas") ||
@@ -147,22 +136,21 @@ export function LoginPage({ onSuccess, onFirstLogin, onForgotPassword }: LoginPa
             {/* Phone number */}
             <div className="space-y-2">
               <Label htmlFor="phone">Número do WhatsApp</Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <div className="flex gap-2">
+                <CountrySelector
+                  value={selectedCountry}
+                  onChange={setSelectedCountry}
+                  disabled={loading}
+                />
                 <Input
                   id="phone"
                   type="tel"
-                  placeholder="+55 (62) 99150-9945"
+                  placeholder="99150-9945"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
-                  onKeyDown={(e) => {
-                    if (e.key === "Backspace" && phoneNumber.length <= 3) {
-                      e.preventDefault();
-                    }
-                  }}
-                  className="pl-10"
+                  className="flex-1"
                   disabled={loading}
-                  maxLength={19}
+                  maxLength={15}
                 />
               </div>
             </div>

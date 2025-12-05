@@ -5,8 +5,10 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { sendVerificationCode, verifyCode } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Phone, ShieldCheck, ArrowLeft } from "lucide-react";
+import { Loader2, ShieldCheck, ArrowLeft } from "lucide-react";
 import mooviLogo from "@/assets/moovi-logo.png";
+import { CountrySelector } from "./CountrySelector";
+import { countries, Country } from "@/data/countries";
 
 interface PhoneLoginProps {
   onSuccess: (jid: string, token: string, phoneNumber: string, needsPasswordSetup: boolean, refreshToken: string) => void;
@@ -14,66 +16,35 @@ interface PhoneLoginProps {
   isResetMode?: boolean;
 }
 
-// Função para formatar telefone brasileiro com máscara
+// Format phone number - just keeps digits
 const formatPhoneNumber = (value: string): string => {
-  // Remove o prefixo +55 primeiro, DEPOIS extrai números
-  let numbers = value.replace(/^\+55\s*\(?\s*/, "").replace(/\D/g, "");
-
-  // Limita a 11 dígitos (DDD + número, SEM incluir o 55 do país)
-  numbers = numbers.slice(0, 11);
-
-  // Aplica máscara conforme o tamanho
-  if (numbers.length === 0) {
-    return "+55";
-  } else if (numbers.length <= 2) {
-    return `+55 (${numbers}`;
-  } else if (numbers.length <= 6) {
-    return `+55 (${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
-  } else if (numbers.length <= 10) {
-    // Telefone fixo: (XX) XXXX-XXXX
-    return `+55 (${numbers.slice(0, 2)}) ${numbers.slice(2, 6)}-${numbers.slice(6)}`;
-  } else {
-    // Celular: (XX) XXXXX-XXXX
-    return `+55 (${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
-  }
+  return value.replace(/\D/g, "").slice(0, 15);
 };
 
-// Função para extrair apenas os números (inclui 55 no início)
-const extractPhoneNumbers = (formatted: string): string => {
-  // Remove o prefixo +55 e extrai apenas DDD+número
-  const dddAndNumber = formatted.replace(/^\+55\s*\(?\s*/, "").replace(/\D/g, "");
-  // Retorna 55 + DDD + número completo
-  return "55" + dddAndNumber;
+// Extract full phone number with country dial code
+const extractPhoneNumbers = (phoneNumber: string, dialCode: string): string => {
+  const cleanDialCode = dialCode.replace(/\D/g, "");
+  const cleanNumber = phoneNumber.replace(/\D/g, "");
+  return cleanDialCode + cleanNumber;
 };
 
 export function PhoneLogin({ onSuccess, onBack, isResetMode = false }: PhoneLoginProps) {
   const [step, setStep] = useState<"phone" | "code">("phone");
-  const [phoneNumber, setPhoneNumber] = useState("+55");
+  const [selectedCountry, setSelectedCountry] = useState<Country>(countries[0]); // Brasil default
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Extrair números com código do país (55 + DDD + número)
-    const phoneOnly = extractPhoneNumbers(phoneNumber);
+    const fullPhone = extractPhoneNumbers(phoneNumber, selectedCountry.dialCode);
 
-    // Validação aprimorada: comprimento e formato brasileiro
-    if (phoneOnly.length < 12 || phoneOnly.length > 13) {
+    // Basic validation: minimum 8 digits (excluding country code)
+    if (phoneNumber.length < 8) {
       toast({
         title: "Telefone inválido",
-        description: "Digite um número de telefone válido com DDD.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validação de formato: DDD válido (11-99) e número de celular (9XXXX-XXXX)
-    const phoneRegex = /^55(1[1-9]|2[1-8]|3[1-5]|4[1-9]|5[1-5]|6[1-9]|7[1-9]|8[1-9]|9[1-9])[6-9]\d{7,8}$/;
-    if (!phoneRegex.test(phoneOnly)) {
-      toast({
-        title: "Telefone inválido",
-        description: "Digite seu número do whatsapp brasileiro válido com DDD.",
+        description: "Digite um número de telefone válido.",
         variant: "destructive",
       });
       return;
@@ -81,8 +52,7 @@ export function PhoneLogin({ onSuccess, onBack, isResetMode = false }: PhoneLogi
 
     setLoading(true);
     try {
-      // Envia apenas os números (DDD + número)
-      await sendVerificationCode(phoneOnly);
+      await sendVerificationCode(fullPhone);
       setStep("code");
       toast({
         title: "Código enviado",
@@ -113,15 +83,13 @@ export function PhoneLogin({ onSuccess, onBack, isResetMode = false }: PhoneLogi
 
     setLoading(true);
     try {
-      // Usar apenas os números (sem +55)
-      const phoneOnly = extractPhoneNumbers(phoneNumber);
-      const { jid, token, refreshToken, needsPasswordSetup } = await verifyCode(phoneOnly, code);
+      const fullPhone = extractPhoneNumbers(phoneNumber, selectedCountry.dialCode);
+      const { jid, token, refreshToken, needsPasswordSetup } = await verifyCode(fullPhone, code);
       toast({
         title: "Verificação bem-sucedida!",
         description: isResetMode ? "Agora cadastre sua nova senha." : "Bem-vindo ao Moovi.dash!",
       });
-      // If reset mode, always force password setup
-      onSuccess(jid, token, phoneOnly, isResetMode ? true : needsPasswordSetup, refreshToken);
+      onSuccess(jid, token, fullPhone, isResetMode ? true : needsPasswordSetup, refreshToken);
     } catch (error) {
       toast({
         title: "Código inválido",
@@ -145,7 +113,7 @@ export function PhoneLogin({ onSuccess, onBack, isResetMode = false }: PhoneLogi
       }
       return "Digite seu número do WhatsApp para receber o código de verificação";
     }
-    return `Digite o código enviado para ${phoneNumber}`;
+    return `Digite o código enviado para ${selectedCountry.dialCode} ${phoneNumber}`;
   };
 
   return (
@@ -172,26 +140,21 @@ export function PhoneLogin({ onSuccess, onBack, isResetMode = false }: PhoneLogi
             <form onSubmit={handleSendCode} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="phone">Número do Whatsapp</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <div className="flex gap-2">
+                  <CountrySelector
+                    value={selectedCountry}
+                    onChange={setSelectedCountry}
+                    disabled={loading}
+                  />
                   <Input
                     id="phone"
                     type="tel"
-                    placeholder="+55 (62) 99150-9945"
+                    placeholder="99150-9945"
                     value={phoneNumber}
-                    onChange={(e) => {
-                      const formatted = formatPhoneNumber(e.target.value);
-                      setPhoneNumber(formatted);
-                    }}
-                    onKeyDown={(e) => {
-                      // Impedir apagar o prefixo +55
-                      if (e.key === "Backspace" && phoneNumber.length <= 3) {
-                        e.preventDefault();
-                      }
-                    }}
-                    className="pl-10"
+                    onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
+                    className="flex-1"
                     disabled={loading}
-                    maxLength={19}
+                    maxLength={15}
                   />
                 </div>
               </div>
