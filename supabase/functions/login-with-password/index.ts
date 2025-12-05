@@ -25,6 +25,9 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Generate opaque request ID for logging (privacy-preserving)
+  const requestId = crypto.randomUUID().substring(0, 8);
+
   try {
     // Rate limiting
     const clientIP = getClientIP(req);
@@ -78,7 +81,7 @@ Deno.serve(async (req) => {
     const genericError = "Credenciais inválidas";
 
     if (profileError || !profile) {
-      console.warn(`[SECURITY] Login attempt for non-existent phone: ${phoneNumber.substring(0, 4)}****`);
+      console.warn(`[SECURITY] req:${requestId} Login attempt failed - user not found`);
       return new Response(
         JSON.stringify({ error: genericError, needsWhatsApp: true }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -86,7 +89,7 @@ Deno.serve(async (req) => {
     }
 
     if (!profile.has_password || !profile.password_hash) {
-      console.warn(`[SECURITY] Login attempt for user without password: ${phoneNumber.substring(0, 4)}****`);
+      console.warn(`[SECURITY] req:${requestId} Login attempt failed - no password set`);
       return new Response(
         JSON.stringify({ error: "Você ainda não cadastrou uma senha. Use o código WhatsApp primeiro.", needsWhatsApp: true }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -97,7 +100,7 @@ Deno.serve(async (req) => {
     const isValidPassword = bcrypt.compareSync(password, profile.password_hash);
 
     if (!isValidPassword) {
-      console.warn(`[SECURITY] Invalid password attempt for: ${phoneNumber.substring(0, 4)}****`);
+      console.warn(`[SECURITY] req:${requestId} Login attempt failed - invalid password`);
       return new Response(
         JSON.stringify({ error: genericError }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -108,7 +111,7 @@ Deno.serve(async (req) => {
     const { data: { users }, error: listError } = await supabaseClient.auth.admin.listUsers();
     
     if (listError) {
-      console.error("Error listing users:", listError);
+      console.error(`req:${requestId} Error listing users:`, listError);
       throw listError;
     }
 
@@ -116,7 +119,7 @@ Deno.serve(async (req) => {
     const existingUser = users.find((u) => u.email === email);
 
     if (!existingUser) {
-      console.error(`User not found for email: ${email}`);
+      console.error(`req:${requestId} User not found`);
       return new Response(
         JSON.stringify({ error: genericError }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -141,13 +144,13 @@ Deno.serve(async (req) => {
     });
 
     if (signInError) {
-      console.error("[SECURITY] Error signing in user:", signInError);
+      console.error(`req:${requestId} Error signing in user:`, signInError);
       throw signInError;
     }
 
     const jid = existingUser.user_metadata?.jid || `${phoneNumber}@s.whatsapp.net`;
 
-    console.info(`[SECURITY] Password login successful for: ${phoneNumber.substring(0, 4)}****`);
+    console.info(`[SECURITY] req:${requestId} Password login successful`);
 
     return new Response(
       JSON.stringify({
@@ -160,7 +163,7 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error("Error in login-with-password:", error);
+    console.error(`req:${requestId} Error in login-with-password:`, error);
     return new Response(
       JSON.stringify({ error: "Erro ao processar login" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

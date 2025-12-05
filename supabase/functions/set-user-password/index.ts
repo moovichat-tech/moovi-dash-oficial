@@ -26,6 +26,9 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Generate opaque request ID for logging (privacy-preserving)
+  const requestId = crypto.randomUUID().substring(0, 8);
+
   try {
     // Rate limiting
     const clientIP = getClientIP(req);
@@ -81,7 +84,7 @@ Deno.serve(async (req) => {
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token);
     
     if (userError || !user) {
-      console.error("Invalid token:", userError);
+      console.error(`req:${requestId} Invalid token`);
       return new Response(
         JSON.stringify({ error: "Token inválido ou expirado" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -114,11 +117,11 @@ Deno.serve(async (req) => {
       });
 
     if (upsertError) {
-      console.error("Error saving password:", upsertError);
+      console.error(`req:${requestId} Error saving password:`, upsertError);
       throw upsertError;
     }
 
-    console.info(`[SECURITY] Password set successfully for user: ${user.id}`);
+    console.info(`req:${requestId} Password set successfully`);
 
     return new Response(
       JSON.stringify({ success: true, message: "Senha cadastrada com sucesso" }),
@@ -126,7 +129,7 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error("Error in set-user-password:", error);
+    console.error(`req:${requestId} Error in set-user-password:`, error);
     return new Response(
       JSON.stringify({ error: "Erro ao cadastrar senha" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

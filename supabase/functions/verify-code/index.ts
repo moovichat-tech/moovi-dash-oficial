@@ -26,6 +26,9 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Generate opaque request ID for logging (privacy-preserving)
+  const requestId = crypto.randomUUID().substring(0, 8);
+
   try {
     // Server-side rate limiting by IP
     const clientIP = getClientIP(req);
@@ -65,7 +68,7 @@ Deno.serve(async (req) => {
       codeSchema.parse(code);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        console.warn(`[SECURITY] Validation failed: ${error.errors[0].message}`);
+        console.warn(`req:${requestId} Validation failed: ${error.errors[0].message}`);
         return new Response(
           JSON.stringify({ error: error.errors[0].message }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -84,7 +87,7 @@ Deno.serve(async (req) => {
       throw new Error("Server configuration error: Missing N8N credentials");
     }
 
-    console.info(`Calling N8N verify endpoint for phone: ${phoneNumber.substring(0, 4)}****`);
+    console.info(`req:${requestId} Calling N8N verify endpoint`);
 
     // Verify code with n8n
     const response = await fetch(`${webhookUrl}/webhook/auth/verify-code`, {
@@ -96,10 +99,10 @@ Deno.serve(async (req) => {
       body: JSON.stringify({ telefone: phoneNumber, code }),
     });
 
-    console.info(`N8N verify response status: ${response.status} ${response.statusText}`);
+    console.info(`req:${requestId} N8N verify response status: ${response.status}`);
 
     if (response.status === 401) {
-      console.error("N8N returned 401 - Invalid or expired code");
+      console.error(`req:${requestId} Invalid or expired code`);
       return new Response(JSON.stringify({ error: "Invalid or expired code" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -108,17 +111,13 @@ Deno.serve(async (req) => {
 
     if (!response.ok) {
       const errorBody = await response.text();
-      console.error("N8N error response:", {
-        status: response.status,
-        statusText: response.statusText,
-        body: errorBody,
-      });
-      throw new Error(`N8N webhook failed (${response.status}): ${response.statusText}. ${errorBody}`);
+      console.error(`req:${requestId} N8N error:`, { status: response.status });
+      throw new Error(`N8N webhook failed (${response.status})`);
     }
 
     const data = await response.json();
 
-    console.info(`[SECURITY] Phone verification successful for: ${phoneNumber.substring(0, 4)}****`);
+    console.info(`req:${requestId} Phone verification successful`);
 
     // Create Supabase client
     const supabaseClient = createClient(
@@ -135,7 +134,7 @@ Deno.serve(async (req) => {
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
     
-    console.info(`[SECURITY] Attempting user operation for email: ${email}`);
+    console.info(`req:${requestId} Creating/updating user`);
     
     const { data: authData, error: authError } = await supabaseClient.auth.admin.createUser({
       email,
@@ -150,24 +149,24 @@ Deno.serve(async (req) => {
     // If user already exists, update metadata and password
     if (authError) {
       if (authError.message.includes("already registered") || authError.code === "email_exists") {
-        console.info(`[SECURITY] User already exists for email: ${email}, updating metadata...`);
+        console.info(`req:${requestId} User exists, updating metadata`);
         
         // Get user by email
         const { data: { users }, error: listError } = await supabaseClient.auth.admin.listUsers();
         
         if (listError) {
-          console.error("Error listing users:", listError);
+          console.error(`req:${requestId} Error listing users:`, listError);
           throw listError;
         }
         
         const existingUser = users.find((u) => u.email === email);
         
         if (!existingUser) {
-          console.error(`User not found for email: ${email} despite email_exists error`);
+          console.error(`req:${requestId} User not found despite email_exists error`);
           throw new Error("User authentication failed");
         }
         
-        console.info(`[SECURITY] UPDATE operation - User ID: ${existingUser.id}, Phone: ${phoneNumber.substring(0, 4)}****`);
+        console.info(`req:${requestId} Updating user`);
         const { error: updateError } = await supabaseClient.auth.admin.updateUserById(existingUser.id, {
           password, // Update password
           user_metadata: {
@@ -177,11 +176,11 @@ Deno.serve(async (req) => {
         });
         
         if (updateError) {
-          console.error("[SECURITY] Error updating user:", updateError);
+          console.error(`req:${requestId} Error updating user:`, updateError);
           throw updateError;
         }
         
-        console.info(`[SECURITY] UPDATE completed successfully for user: ${existingUser.id}`);
+        console.info(`req:${requestId} Update completed`);
         
         // Update user_profiles entry
         const { error: profileError } = await supabaseClient
@@ -194,7 +193,7 @@ Deno.serve(async (req) => {
           });
 
         if (profileError) {
-          console.error("Error updating user profile:", profileError);
+          console.error(`req:${requestId} Error updating user profile:`, profileError);
         }
 
         // Sign in the user and return session
@@ -204,7 +203,7 @@ Deno.serve(async (req) => {
         });
 
         if (signInError) {
-          console.error("[SECURITY] Error signing in user after update:", signInError);
+          console.error(`req:${requestId} Error signing in user:`, signInError);
           throw signInError;
         }
 
@@ -228,11 +227,11 @@ Deno.serve(async (req) => {
       }
       
       // If it's a different error, throw it
-      console.error("Error creating user:", authError);
+      console.error(`req:${requestId} Error creating user:`, authError);
       throw authError;
     }
 
-    console.info(`[SECURITY] CREATE operation completed - User ID: ${authData.user.id}, Phone: ${phoneNumber.substring(0, 4)}****`);
+    console.info(`req:${requestId} User created successfully`);
 
     // Create user_profiles entry for new user
     const { error: profileError } = await supabaseClient
@@ -246,7 +245,7 @@ Deno.serve(async (req) => {
       });
 
     if (profileError) {
-      console.error("Error creating user profile:", profileError);
+      console.error(`req:${requestId} Error creating user profile:`, profileError);
       // Don't throw - profile creation is not critical for login
     }
 
@@ -257,7 +256,7 @@ Deno.serve(async (req) => {
     });
 
     if (signInError) {
-      console.error("[SECURITY] Error signing in new user:", signInError);
+      console.error(`req:${requestId} Error signing in new user:`, signInError);
       throw signInError;
     }
 
@@ -279,7 +278,7 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (error) {
-    console.error("Error in verify-code:", error);
+    console.error(`req:${requestId} Error in verify-code:`, error);
     return new Response(JSON.stringify({ error: "Erro ao processar verificação" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
