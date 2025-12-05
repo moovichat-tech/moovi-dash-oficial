@@ -13,9 +13,11 @@ const RATE_LIMIT = {
   windowMs: 15 * 60 * 1000, // 15 minutes
 };
 
-// Input validation schemas
+// Input validation schemas - accepts international phone numbers
 const phoneSchema = z.string()
-  .regex(/^55[1-9]{2}9?[6-9]\d{7,8}$/, 'Formato de telefone inválido');
+  .min(8, 'Phone number too short')
+  .max(15, 'Phone number too long')
+  .regex(/^\d+$/, 'Phone number must contain only digits');
 
 const codeSchema = z.string()
   .length(6, 'Código deve ter 6 dígitos')

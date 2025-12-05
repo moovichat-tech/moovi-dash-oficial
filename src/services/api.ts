@@ -450,8 +450,9 @@ export async function verifyCode(
 
 /**
  * Verifica se o usuário já possui senha cadastrada
+ * Note: Returns only hasPassword to prevent phone enumeration attacks
  */
-export async function checkUserHasPassword(phoneNumber: string): Promise<{ exists: boolean; hasPassword: boolean }> {
+export async function checkUserHasPassword(phoneNumber: string): Promise<{ hasPassword: boolean }> {
   try {
     const { data, error } = await supabase.functions.invoke('check-user-has-password', {
       body: { phoneNumber },
@@ -462,7 +463,6 @@ export async function checkUserHasPassword(phoneNumber: string): Promise<{ exist
     }
 
     return {
-      exists: data.exists ?? false,
       hasPassword: data.hasPassword ?? false,
     };
   } catch (error) {
