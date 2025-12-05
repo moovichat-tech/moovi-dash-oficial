@@ -214,6 +214,19 @@ function processRawDashboardData(raw: any, jid: string): DashboardData {
     });
   }
 
+  // ✅ Processar configurações do usuário (moeda, fuso, etc.)
+  const configuracoesUsuario = raw.configuracoes_usuario
+    ? {
+        nome_assistente: raw.configuracoes_usuario.nome_assistente || 'MOOVI',
+        moeda: raw.configuracoes_usuario.moeda || 'BRL',
+        fuso_horario: raw.configuracoes_usuario.fuso_horario || 'America/Sao_Paulo',
+      }
+    : undefined;
+
+  if (IS_DEV && configuracoesUsuario) {
+    console.log('💱 Configurações do usuário:', configuracoesUsuario);
+  }
+
   // ✅ Retornar dados processados (usando dados pré-filtrados da API)
   return {
     jid,
@@ -227,6 +240,7 @@ function processRawDashboardData(raw: any, jid: string): DashboardData {
     recorrencias: Array.isArray(raw.recorrencias) ? raw.recorrencias : [],
     limites,
     historico_30dias: historico30dias,
+    configuracoes_usuario: configuracoesUsuario,
   };
 }
 
