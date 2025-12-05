@@ -93,9 +93,17 @@ export function TransactionsList({ transactions }: TransactionsListProps) {
         );
       })
       .sort((a, b) => {
-        // Ordenar por ID decrescente (maior ID = mais recente)
-        const idA = parseInt(a.id.replace('#', ''), 10) || 0;
-        const idB = parseInt(b.id.replace('#', ''), 10) || 0;
+        // 1. Ordenar por data decrescente (mais recente primeiro)
+        const dateA = new Date(a.data).getTime();
+        const dateB = new Date(b.data).getTime();
+        
+        if (dateB !== dateA) {
+          return dateB - dateA;
+        }
+        
+        // 2. Dentro do mesmo dia, ordenar por ID decrescente (maior ID = mais recente)
+        const idA = parseInt(String(a.id).replace(/\D/g, ''), 10) || 0;
+        const idB = parseInt(String(b.id).replace(/\D/g, ''), 10) || 0;
         return idB - idA;
       });
   }, [transactions, filterState]);
