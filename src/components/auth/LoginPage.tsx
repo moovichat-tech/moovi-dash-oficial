@@ -17,9 +17,54 @@ interface LoginPageProps {
   onForgotPassword: () => void;
 }
 
-// Format phone number - just keeps digits
-const formatPhoneNumber = (value: string): string => {
-  return value.replace(/\D/g, "").slice(0, 15);
+// Format phone number with mask based on country
+const formatPhoneWithMask = (value: string, countryCode: string): string => {
+  const digits = value.replace(/\D/g, "");
+  
+  if (countryCode === "BR") {
+    // Brasil: (11) 99150-9945
+    if (digits.length <= 2) {
+      return digits.length ? `(${digits}` : "";
+    }
+    if (digits.length <= 7) {
+      return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    }
+    if (digits.length <= 10) {
+      return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+    }
+    // Celular 9 dígitos
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
+  }
+  
+  if (countryCode === "US" || countryCode === "CA") {
+    // EUA/Canadá: (555) 123-4567
+    if (digits.length <= 3) {
+      return digits.length ? `(${digits}` : "";
+    }
+    if (digits.length <= 6) {
+      return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+    }
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+  }
+  
+  // Outros países: agrupa em blocos
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)} ${digits.slice(3)}`;
+  if (digits.length <= 9) return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
+  return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 9)} ${digits.slice(9, 12)}`;
+};
+
+// Get placeholder based on country
+const getPlaceholder = (countryCode: string): string => {
+  switch (countryCode) {
+    case "BR":
+      return "(11) 99150-9945";
+    case "US":
+    case "CA":
+      return "(555) 123-4567";
+    default:
+      return "123 456 789";
+  }
 };
 
 // Extract full phone number with country dial code
@@ -36,13 +81,21 @@ export function LoginPage({ onSuccess, onFirstLogin, onForgotPassword }: LoginPa
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const handleCountryChange = (country: Country) => {
+    setSelectedCountry(country);
+    // Re-apply mask of new country to existing number
+    const digits = phoneNumber.replace(/\D/g, "");
+    setPhoneNumber(formatPhoneWithMask(digits, country.code));
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const fullPhone = extractPhoneNumbers(phoneNumber, selectedCountry.dialCode);
+    const digitsOnly = phoneNumber.replace(/\D/g, "");
 
     // Basic validation: minimum 8 digits
-    if (phoneNumber.length < 8) {
+    if (digitsOnly.length < 8) {
       toast({
         title: "Telefone inválido",
         description: "Digite um número de telefone válido.",
@@ -139,18 +192,18 @@ export function LoginPage({ onSuccess, onFirstLogin, onForgotPassword }: LoginPa
               <div className="flex gap-2">
                 <CountrySelector
                   value={selectedCountry}
-                  onChange={setSelectedCountry}
+                  onChange={handleCountryChange}
                   disabled={loading}
                 />
                 <Input
                   id="phone"
                   type="tel"
-                  placeholder="99150-9945"
+                  placeholder={getPlaceholder(selectedCountry.code)}
                   value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(formatPhoneNumber(e.target.value))}
+                  onChange={(e) => setPhoneNumber(formatPhoneWithMask(e.target.value, selectedCountry.code))}
                   className="flex-1"
                   disabled={loading}
-                  maxLength={15}
+                  maxLength={20}
                 />
               </div>
             </div>
