@@ -106,15 +106,29 @@ export function LoginPage({ onSuccess, onFirstLogin, onForgotPassword }: LoginPa
           description: "Você ainda não tem senha. Clique no botão 'Primeiro Login' para criar sua conta.",
           variant: "destructive",
         });
-        // NÃO redirecionar - apenas mostrar a mensagem
         return;
       }
 
-      toast({
-        title: "Erro no login",
-        description: error.message || "Credenciais inválidas. Tente novamente.",
-        variant: "destructive",
-      });
+      // Check if it's an invalid password error
+      const errorMessage = error.message || "";
+      const isInvalidPassword = 
+        errorMessage.toLowerCase().includes("credenciais inválidas") ||
+        errorMessage.toLowerCase().includes("invalid") ||
+        error.status === 401;
+
+      if (isInvalidPassword) {
+        toast({
+          title: "Senha incorreta",
+          description: "A senha digitada está incorreta. Se esqueceu sua senha, clique em 'Esqueci minha senha'.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Erro no login",
+          description: errorMessage || "Ocorreu um erro ao fazer login. Tente novamente.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }

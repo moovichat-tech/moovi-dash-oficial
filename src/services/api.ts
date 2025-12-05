@@ -531,20 +531,29 @@ export async function loginWithPassword(
       body: { phoneNumber, password },
     });
 
+    // Handle edge function errors (non-2xx responses)
     if (error) {
-      const errorData = error as any;
-      if (errorData.needsWhatsApp) {
-        const customError = new ApiError(error.message || 'Credenciais inválidas', 401);
+      // Try to extract error message from the response
+      const errorMessage = (error as any)?.context?.body 
+        ? JSON.parse((error as any).context.body)?.error 
+        : (error as any)?.message || 'Credenciais inválidas';
+      
+      if ((error as any)?.needsWhatsApp || data?.needsWhatsApp) {
+        const customError = new ApiError(errorMessage, 401);
         (customError as any).needsWhatsApp = true;
         throw customError;
       }
-      throw new ApiError(error.message || 'Credenciais inválidas', 401);
+      throw new ApiError(errorMessage, 401);
     }
 
-    if (data.needsWhatsApp) {
-      const customError = new ApiError(data.error || 'Senha não cadastrada', 401);
-      (customError as any).needsWhatsApp = true;
-      throw customError;
+    // Handle errors returned in success response body
+    if (data?.error) {
+      if (data.needsWhatsApp) {
+        const customError = new ApiError(data.error, 401);
+        (customError as any).needsWhatsApp = true;
+        throw customError;
+      }
+      throw new ApiError(data.error, 401);
     }
 
     if (!data.access_token || !data.jid) {
@@ -560,6 +569,6 @@ export async function loginWithPassword(
     if (error instanceof ApiError) {
       throw error;
     }
-    throw new ApiError('Erro de conexão ao fazer login');
+    throw new ApiError('Credenciais inválidas', 401);
   }
 }
