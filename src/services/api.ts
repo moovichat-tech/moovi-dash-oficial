@@ -181,6 +181,7 @@ function processRawDashboardData(raw: any, jid: string): DashboardData {
         tipo: 'cartao_credito' as const,
         saldo: 0,
         limite: c.limite_credito,
+        dia_vencimento: c.dia_vencimento,
       }))
     : Array.isArray(raw.contas_cartoes) ? raw.contas_cartoes : [];
 
