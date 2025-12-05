@@ -46,7 +46,33 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      user_profiles_safe: {
+        Row: {
+          created_at: string | null
+          has_password: boolean | null
+          id: string | null
+          phone_number: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          has_password?: boolean | null
+          id?: string | null
+          phone_number?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          has_password?: boolean | null
+          id?: string | null
+          phone_number?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
