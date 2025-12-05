@@ -183,6 +183,20 @@ Deno.serve(async (req) => {
         
         console.info(`[SECURITY] UPDATE completed successfully for user: ${existingUser.id}`);
         
+        // Update user_profiles entry
+        const { error: profileError } = await supabaseClient
+          .from('user_profiles')
+          .upsert({
+            user_id: existingUser.id,
+            phone_number: phoneNumber,
+          }, {
+            onConflict: 'phone_number',
+          });
+
+        if (profileError) {
+          console.error("Error updating user profile:", profileError);
+        }
+
         // Sign in the user and return session
         const { data: sessionData, error: signInError } = await supabaseClient.auth.signInWithPassword({
           email,
@@ -194,12 +208,20 @@ Deno.serve(async (req) => {
           throw signInError;
         }
 
+        // Check if user has password set
+        const { data: profileData } = await supabaseClient
+          .from('user_profiles')
+          .select('has_password')
+          .eq('phone_number', phoneNumber)
+          .single();
+
         return new Response(
           JSON.stringify({
             success: true,
             jid: data.jid,
             access_token: sessionData.session?.access_token,
             refresh_token: sessionData.session?.refresh_token,
+            needsPasswordSetup: !(profileData?.has_password ?? false),
           }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
@@ -212,6 +234,22 @@ Deno.serve(async (req) => {
 
     console.info(`[SECURITY] CREATE operation completed - User ID: ${authData.user.id}, Phone: ${phoneNumber.substring(0, 4)}****`);
 
+    // Create user_profiles entry for new user
+    const { error: profileError } = await supabaseClient
+      .from('user_profiles')
+      .upsert({
+        user_id: authData.user.id,
+        phone_number: phoneNumber,
+        has_password: false,
+      }, {
+        onConflict: 'phone_number',
+      });
+
+    if (profileError) {
+      console.error("Error creating user profile:", profileError);
+      // Don't throw - profile creation is not critical for login
+    }
+
     // Sign in the new user and return session
     const { data: sessionData, error: signInError } = await supabaseClient.auth.signInWithPassword({
       email,
@@ -223,12 +261,20 @@ Deno.serve(async (req) => {
       throw signInError;
     }
 
+    // Check if user has password set
+    const { data: profileData } = await supabaseClient
+      .from('user_profiles')
+      .select('has_password')
+      .eq('phone_number', phoneNumber)
+      .single();
+
     return new Response(
       JSON.stringify({
         success: true,
         jid: data.jid,
         access_token: sessionData.session?.access_token,
         refresh_token: sessionData.session?.refresh_token,
+        needsPasswordSetup: !(profileData?.has_password ?? false),
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );

@@ -401,7 +401,7 @@ export async function sendVerificationCode(phoneNumber: string): Promise<void> {
 export async function verifyCode(
   phoneNumber: string,
   code: string
-): Promise<{ jid: string; token: string }> {
+): Promise<{ jid: string; token: string; needsPasswordSetup: boolean }> {
   // Rate limiting: max 5 attempts per 15 minutes per phone number
   const rateLimitKey = `verify-code-${phoneNumber}`;
   if (!checkRateLimit(rateLimitKey, { maxRequests: 5, windowMs: 900000 })) {
@@ -447,11 +447,128 @@ export async function verifyCode(
     return {
       jid: verifyResponse.jid,
       token: verifyResponse.access_token,
+      needsPasswordSetup: verifyResponse.needsPasswordSetup ?? true,
     };
   } catch (error) {
     if (error instanceof ApiError) {
       throw error;
     }
     throw new ApiError('Erro de conexão ao verificar código');
+  }
+}
+
+/**
+ * Verifica se o usuário já possui senha cadastrada
+ */
+export async function checkUserHasPassword(phoneNumber: string): Promise<{ exists: boolean; hasPassword: boolean }> {
+  try {
+    const { data, error } = await supabase.functions.invoke('check-user-has-password', {
+      body: { phoneNumber },
+    });
+
+    if (error) {
+      throw new ApiError('Erro ao verificar usuário', 500);
+    }
+
+    return {
+      exists: data.exists ?? false,
+      hasPassword: data.hasPassword ?? false,
+    };
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    throw new ApiError('Erro de conexão ao verificar usuário');
+  }
+}
+
+/**
+ * Cadastra uma nova senha para o usuário autenticado
+ */
+export async function setUserPassword(password: string): Promise<void> {
+  // Rate limiting
+  const rateLimitKey = 'set-password';
+  if (!checkRateLimit(rateLimitKey, { maxRequests: 5, windowMs: 900000 })) {
+    const resetTime = Math.ceil(getRateLimitResetTime(rateLimitKey, 900000) / 60000);
+    throw new ApiError(
+      `Muitas tentativas. Tente novamente em ${resetTime} minutos.`,
+      429
+    );
+  }
+
+  try {
+    const { data: session } = await supabase.auth.getSession();
+    
+    if (!session?.session?.access_token) {
+      throw new ApiError('Sessão expirada. Faça login novamente.', 401);
+    }
+
+    const { error } = await supabase.functions.invoke('set-user-password', {
+      body: { password },
+    });
+
+    if (error) {
+      throw new ApiError(error.message || 'Erro ao cadastrar senha', 500);
+    }
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    throw new ApiError('Erro de conexão ao cadastrar senha');
+  }
+}
+
+/**
+ * Faz login com telefone e senha
+ */
+export async function loginWithPassword(
+  phoneNumber: string, 
+  password: string
+): Promise<{ jid: string; access_token: string; refresh_token: string }> {
+  // Rate limiting
+  const rateLimitKey = `login-password-${phoneNumber}`;
+  if (!checkRateLimit(rateLimitKey, { maxRequests: 5, windowMs: 900000 })) {
+    const resetTime = Math.ceil(getRateLimitResetTime(rateLimitKey, 900000) / 60000);
+    throw new ApiError(
+      `Muitas tentativas. Tente novamente em ${resetTime} minutos.`,
+      429
+    );
+  }
+
+  try {
+    const { data, error } = await supabase.functions.invoke('login-with-password', {
+      body: { phoneNumber, password },
+    });
+
+    if (error) {
+      const errorData = error as any;
+      if (errorData.needsWhatsApp) {
+        const customError = new ApiError(error.message || 'Credenciais inválidas', 401);
+        (customError as any).needsWhatsApp = true;
+        throw customError;
+      }
+      throw new ApiError(error.message || 'Credenciais inválidas', 401);
+    }
+
+    if (data.needsWhatsApp) {
+      const customError = new ApiError(data.error || 'Senha não cadastrada', 401);
+      (customError as any).needsWhatsApp = true;
+      throw customError;
+    }
+
+    if (!data.access_token || !data.jid) {
+      throw new ApiError('Resposta inválida do servidor', 500);
+    }
+
+    return {
+      jid: data.jid,
+      access_token: data.access_token,
+      refresh_token: data.refresh_token,
+    };
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+    throw new ApiError('Erro de conexão ao fazer login');
   }
 }
