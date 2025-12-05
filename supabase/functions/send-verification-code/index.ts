@@ -9,13 +9,12 @@ const corsHeaders = {
 
 // Rate limit: 3 attempts per hour per IP
 const RATE_LIMIT = {
-  maxRequests: 3,
+  maxRequests: 13,
   windowMs: 60 * 60 * 1000, // 1 hour
 };
 
 // Input validation schema
-const phoneSchema = z.string()
-  .regex(/^55[1-9]{2}9?[6-9]\d{7,8}$/, 'Formato de telefone inválido');
+const phoneSchema = z.string().regex(/^55[1-9]{2}9?[6-9]\d{7,8}$/, "Formato de telefone inválido");
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -49,10 +48,10 @@ Deno.serve(async (req) => {
     const { phoneNumber } = await req.json();
 
     if (!phoneNumber) {
-      return new Response(
-        JSON.stringify({ error: "Telefone é obrigatório" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Telefone é obrigatório" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Server-side input validation
@@ -61,10 +60,10 @@ Deno.serve(async (req) => {
     } catch (error) {
       if (error instanceof z.ZodError) {
         console.warn(`[SECURITY] Validation failed: ${error.errors[0].message}`);
-        return new Response(
-          JSON.stringify({ error: error.errors[0].message }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ error: error.errors[0].message }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
     }
 
@@ -108,9 +107,10 @@ Deno.serve(async (req) => {
     });
   } catch (error) {
     console.error("Error in send-verification-code:", error);
-    const userMessage = error instanceof Error && error.message.includes("indisponível")
-      ? error.message
-      : "Erro ao enviar código de verificação";
+    const userMessage =
+      error instanceof Error && error.message.includes("indisponível")
+        ? error.message
+        : "Erro ao enviar código de verificação";
     return new Response(JSON.stringify({ error: userMessage }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
