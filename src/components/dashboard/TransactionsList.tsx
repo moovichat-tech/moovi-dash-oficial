@@ -92,7 +92,12 @@ export function TransactionsList({ transactions }: TransactionsListProps) {
           matchesValorMax
         );
       })
-      .sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+      .sort((a, b) => {
+        // Ordenar por ID decrescente (maior ID = mais recente)
+        const idA = parseInt(a.id.replace('#', ''), 10) || 0;
+        const idB = parseInt(b.id.replace('#', ''), 10) || 0;
+        return idB - idA;
+      });
   }, [transactions, filterState]);
 
   // Paginação
