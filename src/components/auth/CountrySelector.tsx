@@ -37,7 +37,11 @@ export function CountrySelector({ value, onChange, disabled }: CountrySelectorPr
           disabled={disabled}
         >
           <span className="flex items-center gap-1.5 truncate">
-            <span className="text-lg" style={{ fontFamily: '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif' }}>{value.flag}</span>
+            <img 
+              src={`https://flagcdn.com/w40/${value.code.toLowerCase()}.png`}
+              alt={value.name}
+              className="h-4 w-6 object-cover rounded-sm"
+            />
             <span className="text-sm">{value.dialCode}</span>
           </span>
           <ChevronsUpDown className="ml-1 h-4 w-4 shrink-0 opacity-50" />
@@ -65,7 +69,11 @@ export function CountrySelector({ value, onChange, disabled }: CountrySelectorPr
                       value.code === country.code ? "opacity-100" : "opacity-0"
                     )}
                   />
-                  <span className="text-lg mr-2" style={{ fontFamily: '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif' }}>{country.flag}</span>
+                  <img 
+                    src={`https://flagcdn.com/w40/${country.code.toLowerCase()}.png`}
+                    alt={country.name}
+                    className="h-4 w-6 object-cover rounded-sm mr-2"
+                  />
                   <span className="flex-1 truncate">{country.name}</span>
                   <span className="text-muted-foreground text-sm ml-2">
                     {country.dialCode}
