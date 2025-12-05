@@ -11,7 +11,7 @@ import { NotFoundState } from '@/components/dashboard/NotFoundState';
 import { Skeleton } from '@/components/ui/skeleton';
 import { GoalsPanel } from '@/components/dashboard/GoalsPanel';
 import { AccountsPanel } from '@/components/dashboard/AccountsPanel';
-import mooviLogo from '@/assets/moovi-logo.png';
+import mooviLogo from '@/assets/moovi-logo-new.png';
 
 interface DashboardProps {
   jid: string;
