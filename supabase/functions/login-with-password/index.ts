@@ -93,8 +93,8 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Verify password with bcrypt
-    const isValidPassword = await bcrypt.compare(password, profile.password_hash);
+    // Verify password with bcrypt (use sync version - async uses Workers not available in Deno)
+    const isValidPassword = bcrypt.compareSync(password, profile.password_hash);
 
     if (!isValidPassword) {
       console.warn(`[SECURITY] Invalid password attempt for: ${phoneNumber.substring(0, 4)}****`);
