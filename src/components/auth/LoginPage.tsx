@@ -116,12 +116,12 @@ export function LoginPage({ onSuccess, onFirstLogin, onForgotPassword }: LoginPa
     setLoading(true);
     try {
       // First check if user has password set
-      const { hasPassword, exists } = await checkUserHasPassword(fullPhone);
+      const { hasPassword } = await checkUserHasPassword(fullPhone);
 
-      if (!exists || !hasPassword) {
+      if (!hasPassword) {
         toast({
-          title: "Conta não encontrada",
-          description: "Você ainda não tem login. Clique no botão 'Primeiro Login' para criar sua conta.",
+          title: "Senha não cadastrada",
+          description: "Você ainda não cadastrou sua senha. Clique no botão 'Primeiro Login' para criar sua conta.",
           variant: "destructive",
         });
         return;

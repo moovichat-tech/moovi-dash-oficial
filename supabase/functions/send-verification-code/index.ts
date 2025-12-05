@@ -13,8 +13,11 @@ const RATE_LIMIT = {
   windowMs: 60 * 60 * 1000, // 1 hour
 };
 
-// Input validation schema
-const phoneSchema = z.string().regex(/^55[1-9]{2}9?[6-9]\d{7,8}$/, "Formato de telefone inválido");
+// Input validation schema - accepts international phone numbers
+const phoneSchema = z.string()
+  .min(8, 'Phone number too short')
+  .max(15, 'Phone number too long')
+  .regex(/^\d+$/, 'Phone number must contain only digits');
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {

@@ -14,7 +14,9 @@ const RATE_LIMIT = {
 };
 
 const phoneSchema = z.string()
-  .regex(/^55[1-9]{2}9?[6-9]\d{7,8}$/, 'Formato de telefone inválido');
+  .min(8, 'Phone number too short')
+  .max(15, 'Phone number too long')
+  .regex(/^\d+$/, 'Phone number must contain only digits');
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -82,10 +84,10 @@ Deno.serve(async (req) => {
       throw error;
     }
 
-    // Return generic response to prevent phone enumeration
+    // Return consistent response to prevent phone enumeration
+    // Never reveal whether account exists - only return hasPassword status
     return new Response(
       JSON.stringify({
-        exists: !!profile,
         hasPassword: profile?.has_password ?? false,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
