@@ -9,7 +9,6 @@ import { FinancialChart } from '@/components/dashboard/FinancialChart';
 import { FloatingActionButton } from '@/components/dashboard/FloatingActionButton';
 import { NotFoundState } from '@/components/dashboard/NotFoundState';
 import { Skeleton } from '@/components/ui/skeleton';
-import { FinancialHealthScore } from '@/components/dashboard/FinancialHealthScore';
 import { GoalsPanel } from '@/components/dashboard/GoalsPanel';
 import { AccountsPanel } from '@/components/dashboard/AccountsPanel';
 import mooviLogo from '@/assets/moovi-logo.png';
@@ -160,11 +159,6 @@ export default function Dashboard({ jid, phoneNumber, onLogout, onNavigateToAnal
       <main className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 md:py-6 space-y-4 md:space-y-6 pb-24">
         {data && (
           <>
-            <FinancialHealthScore
-              receitaMensal={data.receita_mensal}
-              despesaMensal={data.despesa_mensal}
-            />
-
             <BalanceCards
               saldoTotal={data.saldo_total}
               receitaMensal={data.receita_mensal}
