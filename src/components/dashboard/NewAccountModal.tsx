@@ -30,27 +30,25 @@ export function NewAccountModal({ open, onClose, onSendCommand }: NewAccountModa
     'adicionar poupança Caixa com R$5000',
   ];
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!command.trim()) return;
 
-    setLoading(true);
-    try {
-      await onSendCommand(command);
-      toast({
-        title: 'Conta adicionada com sucesso!',
-        description: 'Sua conta foi enviada para processamento.',
-      });
-      onClose();
-      setCommand('');
-    } catch (err) {
+    // Fire-and-forget: fecha imediatamente
+    toast({
+      title: 'Adicionando conta... 💳',
+      description: 'Sua conta está sendo processada.',
+    });
+    onClose();
+    setCommand('');
+
+    // Executa em background
+    onSendCommand(command).catch((err) => {
       toast({
         title: 'Erro ao adicionar conta',
         description: err instanceof Error ? err.message : 'Erro desconhecido',
         variant: 'destructive',
       });
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
   return (

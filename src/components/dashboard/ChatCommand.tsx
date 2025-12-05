@@ -2,37 +2,23 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Send, Sparkles } from 'lucide-react';
+import { Send, Sparkles } from 'lucide-react';
 
 interface ChatCommandProps {
-  onSendCommand: (command: string) => Promise<void>;
+  onSendCommand: (command: string) => void;
   disabled?: boolean;
-  isProcessing?: boolean;
 }
 
-export function ChatCommand({ onSendCommand, disabled, isProcessing }: ChatCommandProps) {
+export function ChatCommand({ onSendCommand, disabled }: ChatCommandProps) {
   const [command, setCommand] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  const isDisabled = loading || disabled || isProcessing;
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!command.trim()) return;
 
     const commandToSend = command;
-    setCommand(''); // ✅ Limpa IMEDIATAMENTE (feedback visual)
-
-    setLoading(true);
-    try {
-      await onSendCommand(commandToSend);
-    } catch (error) {
-      // Se der erro, restaura o comando para o usuário tentar novamente
-      setCommand(commandToSend);
-    } finally {
-      setLoading(false);
-    }
+    setCommand(''); // Limpa imediatamente
+    onSendCommand(commandToSend); // Fire-and-forget
   };
 
   const suggestions = [
@@ -57,7 +43,7 @@ export function ChatCommand({ onSendCommand, disabled, isProcessing }: ChatComma
               placeholder="Digite seu comando em linguagem natural... Ex: 'Adicionar despesa de R$ 100 em supermercado'"
               value={command}
               onChange={(e) => setCommand(e.target.value)}
-              disabled={isDisabled}
+              disabled={disabled}
               rows={3}
               className="resize-none"
             />
@@ -69,7 +55,7 @@ export function ChatCommand({ onSendCommand, disabled, isProcessing }: ChatComma
                   variant="outline"
                   size="sm"
                   onClick={() => setCommand(suggestion)}
-                  disabled={isDisabled}
+                  disabled={disabled}
                   className="text-xs"
                 >
                   {suggestion}
@@ -77,18 +63,9 @@ export function ChatCommand({ onSendCommand, disabled, isProcessing }: ChatComma
               ))}
             </div>
           </div>
-          <Button type="submit" className="w-full" disabled={isDisabled || !command.trim()}>
-            {loading || isProcessing ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {isProcessing ? 'Processando comando...' : 'Processando...'}
-              </>
-            ) : (
-              <>
-                <Send className="mr-2 h-4 w-4" />
-                Enviar Comando
-              </>
-            )}
+          <Button type="submit" className="w-full" disabled={disabled || !command.trim()}>
+            <Send className="mr-2 h-4 w-4" />
+            Enviar Comando
           </Button>
         </form>
       </CardContent>
