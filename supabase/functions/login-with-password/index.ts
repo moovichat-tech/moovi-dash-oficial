@@ -70,17 +70,17 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
 
-    // Get user profile with password hash
-    const { data: profile, error: profileError } = await supabaseClient
-      .from('user_profiles')
-      .select('user_id, password_hash, has_password')
+    // Get password hash from secure credentials table (no SELECT RLS - service role only)
+    const { data: credentials, error: credError } = await supabaseClient
+      .from('user_credentials')
+      .select('user_id, password_hash')
       .eq('phone_number', phoneNumber)
       .single();
 
     // Generic error message to prevent enumeration
     const genericError = "Credenciais inválidas";
 
-    if (profileError || !profile) {
+    if (credError || !credentials) {
       console.warn(`[SECURITY] req:${requestId} Login attempt failed - user not found`);
       return new Response(
         JSON.stringify({ error: genericError, needsWhatsApp: true }),
@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (!profile.has_password || !profile.password_hash) {
+    if (!credentials.password_hash) {
       console.warn(`[SECURITY] req:${requestId} Login attempt failed - no password set`);
       return new Response(
         JSON.stringify({ error: "Você ainda não cadastrou uma senha. Use o código WhatsApp primeiro.", needsWhatsApp: true }),
@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
     }
 
     // Verify password with bcrypt (use sync version - async uses Workers not available in Deno)
-    const isValidPassword = bcrypt.compareSync(password, profile.password_hash);
+    const isValidPassword = bcrypt.compareSync(password, credentials.password_hash);
 
     if (!isValidPassword) {
       console.warn(`[SECURITY] req:${requestId} Login attempt failed - invalid password`);
