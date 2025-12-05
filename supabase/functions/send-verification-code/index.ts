@@ -9,7 +9,7 @@ const corsHeaders = {
 
 // Rate limit: 3 attempts per hour per IP
 const RATE_LIMIT = {
-  maxRequests: 13,
+  maxRequests: 20,
   windowMs: 60 * 60 * 1000, // 1 hour
 };
 
