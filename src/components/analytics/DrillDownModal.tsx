@@ -8,6 +8,7 @@ import {
 import { CategorySpending } from '@/types/analytics';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 interface DrillDownModalProps {
   category: CategorySpending;
@@ -15,12 +16,7 @@ interface DrillDownModalProps {
 }
 
 export function DrillDownModal({ category, onClose }: DrillDownModalProps) {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
-  };
+  const { formatCurrency } = useCurrency();
 
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), "dd 'de' MMMM", { locale: ptBR });

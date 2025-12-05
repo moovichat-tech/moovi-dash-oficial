@@ -3,6 +3,7 @@ import { TransactionFilterState } from '@/types/dashboard';
 import { X } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 interface TransactionFilterBadgesProps {
   filterState: TransactionFilterState;
@@ -13,12 +14,7 @@ export function TransactionFilterBadges({
   filterState,
   onRemoveFilter,
 }: TransactionFilterBadgesProps) {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
-  };
+  const { formatCurrency } = useCurrency();
 
   const badges = [];
 

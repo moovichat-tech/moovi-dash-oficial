@@ -11,6 +11,7 @@ import { InsightCards } from '@/components/analytics/InsightCards';
 import { PeriodFilterBar } from '@/components/analytics/PeriodFilterBar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PeriodFilter } from '@/types/analytics';
+import { CurrencyProvider } from '@/contexts/CurrencyContext';
 
 interface AnalyticsProps {
   jid: string;
@@ -80,68 +81,72 @@ export default function Analytics({ jid, phoneNumber, onBack }: AnalyticsProps) 
     );
   }
 
+  const currency = data?.configuracoes_usuario?.moeda || 'BRL';
+
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto p-4 space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button onClick={onBack} variant="ghost" size="sm">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Voltar
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold">Analytics</h1>
-              <p className="text-muted-foreground">Análise detalhada dos seus gastos</p>
+    <CurrencyProvider currency={currency}>
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto p-4 space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button onClick={onBack} variant="ghost" size="sm">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Voltar
+              </Button>
+              <div>
+                <h1 className="text-3xl font-bold">Analytics</h1>
+                <p className="text-muted-foreground">Análise detalhada dos seus gastos</p>
+              </div>
             </div>
+            {insights && (
+              <Button onClick={handleExportAll} variant="default">
+                <FileDown className="mr-2 h-4 w-4" />
+                Exportar Tudo (PDF)
+              </Button>
+            )}
           </div>
+
+          {/* Filtros de Período */}
+          <PeriodFilterBar 
+            filter={periodFilter} 
+            onFilterChange={setPeriodFilter} 
+          />
+
+          {/* Insights Cards */}
           {insights && (
-            <Button onClick={handleExportAll} variant="default">
-              <FileDown className="mr-2 h-4 w-4" />
-              Exportar Tudo (PDF)
-            </Button>
+            <div ref={insightsRef}>
+              <InsightCards insights={insights} />
+            </div>
+          )}
+
+          {/* Empty State quando não há dados no período */}
+          {!insights && (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">
+                Nenhuma transação encontrada no período selecionado
+              </p>
+            </div>
+          )}
+
+          {/* Gráficos (só mostrar se houver insights) */}
+          {insights && (
+            <>
+              <div className="grid gap-6 md:grid-cols-2">
+                <div ref={pieChartRef}>
+                  <CategoryPieChart data={categorySpending} />
+                </div>
+                <div ref={barChartRef}>
+                  <MonthlyComparison data={monthlyComparison} />
+                </div>
+              </div>
+
+              <div ref={lineChartRef}>
+                <CategoryTrendChart trends={categoryTrends} />
+              </div>
+            </>
           )}
         </div>
-
-        {/* Filtros de Período */}
-        <PeriodFilterBar 
-          filter={periodFilter} 
-          onFilterChange={setPeriodFilter} 
-        />
-
-        {/* Insights Cards */}
-        {insights && (
-          <div ref={insightsRef}>
-            <InsightCards insights={insights} />
-          </div>
-        )}
-
-        {/* Empty State quando não há dados no período */}
-        {!insights && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">
-              Nenhuma transação encontrada no período selecionado
-            </p>
-          </div>
-        )}
-
-        {/* Gráficos (só mostrar se houver insights) */}
-        {insights && (
-          <>
-            <div className="grid gap-6 md:grid-cols-2">
-              <div ref={pieChartRef}>
-                <CategoryPieChart data={categorySpending} />
-              </div>
-              <div ref={barChartRef}>
-                <MonthlyComparison data={monthlyComparison} />
-              </div>
-            </div>
-
-            <div ref={lineChartRef}>
-              <CategoryTrendChart trends={categoryTrends} />
-            </div>
-          </>
-        )}
       </div>
-    </div>
+    </CurrencyProvider>
   );
 }

@@ -6,12 +6,14 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Account } from '@/types/dashboard';
 import { cardVariants, hoverScale } from '@/lib/animations';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 interface AccountCardProps {
   account: Account;
 }
 
 export function AccountCard({ account }: AccountCardProps) {
+  const { formatCurrency } = useCurrency();
   const usagePercent = account.limite ? (Math.abs(account.saldo) / account.limite) * 100 : 0;
 
   const statusColor =
@@ -33,13 +35,6 @@ export function AccountCard({ account }: AccountCardProps) {
   };
 
   const Icon = getIcon();
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
-  };
 
   const getTipoLabel = (tipo: Account['tipo']) => {
     const labels = {

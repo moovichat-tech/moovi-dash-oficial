@@ -9,6 +9,7 @@ import { LimitCard } from './LimitCard';
 import { NewAccountModal } from './NewAccountModal';
 import { useCountUp } from '@/hooks/useCountUp';
 import { containerVariants, fadeInVariants, tapScale } from '@/lib/animations';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 interface AccountsPanelProps {
   accounts: Account[];
@@ -17,6 +18,7 @@ interface AccountsPanelProps {
 }
 
 export function AccountsPanel({ accounts, budgets, onSendCommand }: AccountsPanelProps) {
+  const { formatCurrency } = useCurrency();
   const [showNewAccountModal, setShowNewAccountModal] = useState(false);
   const safeAccounts = accounts || [];
   const totalBalance = safeAccounts.reduce((sum, a) => sum + a.saldo, 0);
@@ -31,13 +33,6 @@ export function AccountsPanel({ accounts, budgets, onSendCommand }: AccountsPane
   const animatedBalance = useCountUp(totalBalance, 1500);
   const animatedLimits = useCountUp(totalLimits, 1500);
   const animatedUsage = useCountUp(globalUsage, 1500);
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
-  };
 
   return (
     <motion.div 

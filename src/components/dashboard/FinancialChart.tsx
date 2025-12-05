@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 interface FinancialChartProps {
   data: {
@@ -10,6 +11,8 @@ interface FinancialChartProps {
 }
 
 export function FinancialChart({ data }: FinancialChartProps) {
+  const { formatCurrency } = useCurrency();
+  
   const chartData = (data || []).map((item) => ({
     data: new Date(item.data).toLocaleDateString('pt-BR', {
       day: '2-digit',
@@ -18,14 +21,6 @@ export function FinancialChart({ data }: FinancialChartProps) {
     Receitas: item.receitas,
     Despesas: item.despesas,
   }));
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
 
   return (
     <Card>

@@ -25,12 +25,14 @@ import { Search, TrendingUp, TrendingDown } from 'lucide-react';
 import { TransactionFilters } from './TransactionFilters';
 import { TransactionFilterBadges } from './TransactionFilterBadges';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 interface TransactionsListProps {
   transactions: Transaction[];
 }
 
 export function TransactionsList({ transactions }: TransactionsListProps) {
+  const { formatCurrency } = useCurrency();
   const isMobile = useIsMobile();
   const [filterState, setFilterState] = useState<TransactionFilterState>({
     search: '',
@@ -165,13 +167,6 @@ export function TransactionsList({ transactions }: TransactionsListProps) {
     }
 
     return pages;
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
   };
 
   const formatDate = (dateString: string) => {

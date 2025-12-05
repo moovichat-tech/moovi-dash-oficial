@@ -4,12 +4,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { CategorySpending } from '@/types/analytics';
 import { DrillDownModal } from './DrillDownModal';
 import { ChartExportButtons } from './ChartExportButtons';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 interface CategoryPieChartProps {
   data: CategorySpending[];
 }
 
 export function CategoryPieChart({ data }: CategoryPieChartProps) {
+  const { formatCurrency } = useCurrency();
   const [selectedCategory, setSelectedCategory] = useState<CategorySpending | null>(null);
   const chartRef = useRef<HTMLDivElement>(null);
 
@@ -18,13 +20,6 @@ export function CategoryPieChart({ data }: CategoryPieChartProps) {
     value: cat.total,
     color: cat.cor,
   }));
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
-  };
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {

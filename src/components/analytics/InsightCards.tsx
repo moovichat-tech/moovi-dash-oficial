@@ -1,18 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AnalyticsInsights } from '@/types/analytics';
 import { TrendingUp, TrendingDown, Award, CreditCard, PiggyBank } from 'lucide-react';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 interface InsightCardsProps {
   insights: AnalyticsInsights;
 }
 
 export function InsightCards({ insights }: InsightCardsProps) {
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
-  };
+  const { formatCurrency } = useCurrency();
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
