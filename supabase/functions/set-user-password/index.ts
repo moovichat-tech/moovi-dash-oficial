@@ -96,9 +96,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Hash password with bcrypt
-    const salt = await bcrypt.genSalt(12);
-    const passwordHash = await bcrypt.hash(password, salt);
+    // Hash password with bcrypt (use sync version - async uses Workers not available in Deno)
+    const salt = bcrypt.genSaltSync(12);
+    const passwordHash = bcrypt.hashSync(password, salt);
 
     // Update or create user profile with password
     const { error: upsertError } = await supabaseClient
