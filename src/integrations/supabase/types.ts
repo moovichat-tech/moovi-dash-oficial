@@ -14,12 +14,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      user_credentials: {
+        Row: {
+          created_at: string | null
+          id: string
+          password_hash: string | null
+          phone_number: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          password_hash?: string | null
+          phone_number: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          password_hash?: string | null
+          phone_number?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           created_at: string | null
           has_password: boolean | null
           id: string
-          password_hash: string | null
           phone_number: string
           updated_at: string | null
           user_id: string | null
@@ -28,7 +54,6 @@ export type Database = {
           created_at?: string | null
           has_password?: boolean | null
           id?: string
-          password_hash?: string | null
           phone_number: string
           updated_at?: string | null
           user_id?: string | null
@@ -37,7 +62,6 @@ export type Database = {
           created_at?: string | null
           has_password?: boolean | null
           id?: string
-          password_hash?: string | null
           phone_number?: string
           updated_at?: string | null
           user_id?: string | null

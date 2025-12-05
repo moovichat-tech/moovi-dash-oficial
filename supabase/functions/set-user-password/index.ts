@@ -103,22 +103,38 @@ Deno.serve(async (req) => {
     const salt = bcrypt.genSaltSync(12);
     const passwordHash = bcrypt.hashSync(password, salt);
 
-    // Update or create user profile with password
-    const { error: upsertError } = await supabaseClient
-      .from('user_profiles')
+    // Store password hash in separate credentials table (no SELECT access)
+    const { error: credError } = await supabaseClient
+      .from('user_credentials')
       .upsert({
         user_id: user.id,
         phone_number: phoneNumber,
-        has_password: true,
         password_hash: passwordHash,
         updated_at: new Date().toISOString(),
       }, {
         onConflict: 'phone_number',
       });
 
-    if (upsertError) {
-      console.error(`req:${requestId} Error saving password:`, upsertError);
-      throw upsertError;
+    if (credError) {
+      console.error(`req:${requestId} Error saving credentials:`, credError);
+      throw credError;
+    }
+
+    // Update user_profiles to mark has_password = true (without storing hash)
+    const { error: profileError } = await supabaseClient
+      .from('user_profiles')
+      .upsert({
+        user_id: user.id,
+        phone_number: phoneNumber,
+        has_password: true,
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'phone_number',
+      });
+
+    if (profileError) {
+      console.error(`req:${requestId} Error updating profile:`, profileError);
+      // Non-critical, continue
     }
 
     console.info(`req:${requestId} Password set successfully`);
