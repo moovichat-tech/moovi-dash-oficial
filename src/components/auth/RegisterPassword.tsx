@@ -7,10 +7,12 @@ import { toast } from "@/hooks/use-toast";
 import { Loader2, Lock, Eye, EyeOff, Phone } from "lucide-react";
 import { PasswordStrengthIndicator, isPasswordValid } from "./PasswordStrengthIndicator";
 import { setUserPassword } from "@/services/api";
+import { supabase } from "@/integrations/supabase/client";
 import mooviLogo from "@/assets/moovi-logo.png";
 
 interface RegisterPasswordProps {
   phoneNumber: string;
+  pendingTokens: { access_token: string; refresh_token: string } | null;
   onSuccess: () => void;
   onBack: () => void;
 }
@@ -27,7 +29,7 @@ const formatPhoneDisplay = (phone: string): string => {
   return `+55 (${ddd}) ${part1}-${part2}`;
 };
 
-export function RegisterPassword({ phoneNumber, onSuccess, onBack }: RegisterPasswordProps) {
+export function RegisterPassword({ phoneNumber, pendingTokens, onSuccess, onBack }: RegisterPasswordProps) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -55,8 +57,21 @@ export function RegisterPassword({ phoneNumber, onSuccess, onBack }: RegisterPas
       return;
     }
 
+    if (!pendingTokens) {
+      toast({
+        title: "Sessão expirada",
+        description: "Por favor, faça a verificação via WhatsApp novamente.",
+        variant: "destructive",
+      });
+      onBack();
+      return;
+    }
+
     setLoading(true);
     try {
+      // Estabelecer sessão temporária para permitir setUserPassword
+      await supabase.auth.setSession(pendingTokens);
+      
       await setUserPassword(password);
       toast({
         title: "Senha cadastrada!",

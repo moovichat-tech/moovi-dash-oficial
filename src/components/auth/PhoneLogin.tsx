@@ -9,7 +9,7 @@ import { Loader2, Phone, ShieldCheck, ArrowLeft } from "lucide-react";
 import mooviLogo from "@/assets/moovi-logo.png";
 
 interface PhoneLoginProps {
-  onSuccess: (jid: string, token: string, phoneNumber: string, needsPasswordSetup: boolean) => void;
+  onSuccess: (jid: string, token: string, phoneNumber: string, needsPasswordSetup: boolean, refreshToken: string) => void;
   onBack?: () => void;
   isResetMode?: boolean;
 }
@@ -115,13 +115,13 @@ export function PhoneLogin({ onSuccess, onBack, isResetMode = false }: PhoneLogi
     try {
       // Usar apenas os números (sem +55)
       const phoneOnly = extractPhoneNumbers(phoneNumber);
-      const { jid, token, needsPasswordSetup } = await verifyCode(phoneOnly, code);
+      const { jid, token, refreshToken, needsPasswordSetup } = await verifyCode(phoneOnly, code);
       toast({
         title: "Verificação bem-sucedida!",
         description: isResetMode ? "Agora cadastre sua nova senha." : "Bem-vindo ao Moovi.dash!",
       });
       // If reset mode, always force password setup
-      onSuccess(jid, token, phoneOnly, isResetMode ? true : needsPasswordSetup);
+      onSuccess(jid, token, phoneOnly, isResetMode ? true : needsPasswordSetup, refreshToken);
     } catch (error) {
       toast({
         title: "Código inválido",
