@@ -111,7 +111,7 @@ export function LoginPage({ onSuccess, onFirstLogin, onForgotPassword }: LoginPa
 
       // Check if it's an invalid password error
       const errorMessage = error.message || "";
-      const isInvalidPassword = 
+      const isInvalidPassword =
         errorMessage.toLowerCase().includes("credenciais inválidas") ||
         errorMessage.toLowerCase().includes("invalid") ||
         error.status === 401;
@@ -140,9 +140,7 @@ export function LoginPage({ onSuccess, onFirstLogin, onForgotPassword }: LoginPa
         <CardHeader className="text-center">
           <img src={mooviLogo} alt="Moovi" className="mx-auto mb-4" style={{ height: "60px" }} />
           <CardTitle className="text-2xl">Bem-vindo ao Moovi.dash</CardTitle>
-          <CardDescription>
-            Entre com seu número e senha
-          </CardDescription>
+          <CardDescription>Entre com seu número e senha</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
@@ -207,14 +205,8 @@ export function LoginPage({ onSuccess, onFirstLogin, onForgotPassword }: LoginPa
               </div>
             </div>
 
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={onFirstLogin}
-              disabled={loading}
-            >
-              📲 Primeiro Login (código WhatsApp)
+            <Button type="button" variant="outline" className="w-full" onClick={onFirstLogin} disabled={loading}>
+              Primeiro Login (código WhatsApp)
             </Button>
 
             <Button
@@ -224,7 +216,7 @@ export function LoginPage({ onSuccess, onFirstLogin, onForgotPassword }: LoginPa
               onClick={onForgotPassword}
               disabled={loading}
             >
-              🔓 Esqueci minha senha
+              Esqueci minha senha
             </Button>
           </form>
         </CardContent>
