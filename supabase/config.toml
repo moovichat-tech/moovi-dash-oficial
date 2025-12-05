@@ -1,1 +1,22 @@
 project_id = "zwqeduudvmrxbxjzdhgf"
+
+[functions.get-dashboard-data]
+verify_jwt = true
+
+[functions.send-dashboard-command]
+verify_jwt = true
+
+[functions.send-verification-code]
+verify_jwt = false
+
+[functions.verify-code]
+verify_jwt = false
+
+[functions.check-user-has-password]
+verify_jwt = false
+
+[functions.set-user-password]
+verify_jwt = true
+
+[functions.login-with-password]
+verify_jwt = false

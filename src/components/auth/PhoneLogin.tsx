@@ -5,11 +5,13 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { sendVerificationCode, verifyCode } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Phone, ShieldCheck } from "lucide-react";
+import { Loader2, Phone, ShieldCheck, ArrowLeft } from "lucide-react";
 import mooviLogo from "@/assets/moovi-logo.png";
 
 interface PhoneLoginProps {
-  onSuccess: (jid: string, token: string, phoneNumber: string) => void;
+  onSuccess: (jid: string, token: string, phoneNumber: string, needsPasswordSetup: boolean) => void;
+  onBack?: () => void;
+  isResetMode?: boolean;
 }
 
 // Função para formatar telefone brasileiro com máscara
@@ -44,7 +46,7 @@ const extractPhoneNumbers = (formatted: string): string => {
   return "55" + dddAndNumber;
 };
 
-export function PhoneLogin({ onSuccess }: PhoneLoginProps) {
+export function PhoneLogin({ onSuccess, onBack, isResetMode = false }: PhoneLoginProps) {
   const [step, setStep] = useState<"phone" | "code">("phone");
   const [phoneNumber, setPhoneNumber] = useState("+55");
   const [code, setCode] = useState("");
@@ -113,12 +115,13 @@ export function PhoneLogin({ onSuccess }: PhoneLoginProps) {
     try {
       // Usar apenas os números (sem +55)
       const phoneOnly = extractPhoneNumbers(phoneNumber);
-      const { jid, token } = await verifyCode(phoneOnly, code);
+      const { jid, token, needsPasswordSetup } = await verifyCode(phoneOnly, code);
       toast({
-        title: "Login bem-sucedido",
-        description: "Bem-vindo ao Moovi.dash!",
+        title: "Verificação bem-sucedida!",
+        description: isResetMode ? "Agora cadastre sua nova senha." : "Bem-vindo ao Moovi.dash!",
       });
-      onSuccess(jid, token, phoneOnly);
+      // If reset mode, always force password setup
+      onSuccess(jid, token, phoneOnly, isResetMode ? true : needsPasswordSetup);
     } catch (error) {
       toast({
         title: "Código inválido",
@@ -130,17 +133,39 @@ export function PhoneLogin({ onSuccess }: PhoneLoginProps) {
     }
   };
 
+  const getTitle = () => {
+    if (isResetMode) return "Recuperar Senha";
+    return "Primeiro Login";
+  };
+
+  const getDescription = () => {
+    if (step === "phone") {
+      if (isResetMode) {
+        return "Digite seu número para receber o código de verificação e criar uma nova senha";
+      }
+      return "Digite seu número do WhatsApp para receber o código de verificação";
+    }
+    return `Digite o código enviado para ${phoneNumber}`;
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/10 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
+          {onBack && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="absolute left-4 top-4"
+              onClick={onBack}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar
+            </Button>
+          )}
           <img src={mooviLogo} alt="Moovi" className="mx-auto mb-4" style={{ height: "60px" }} />
-          <CardTitle className="text-2xl">Bem-vindo ao Moovi.dash</CardTitle>
-          <CardDescription>
-            {step === "phone"
-              ? "Digite seu número do whatsapp brasileiro válido com DDD"
-              : `Digite o código enviado para ${phoneNumber}`}
-          </CardDescription>
+          <CardTitle className="text-2xl">{getTitle()}</CardTitle>
+          <CardDescription>{getDescription()}</CardDescription>
         </CardHeader>
         <CardContent>
           {step === "phone" ? (
@@ -174,6 +199,17 @@ export function PhoneLogin({ onSuccess }: PhoneLoginProps) {
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Enviar Código
               </Button>
+              {onBack && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  onClick={onBack}
+                  disabled={loading}
+                >
+                  Voltar para Login
+                </Button>
+              )}
             </form>
           ) : (
             <form onSubmit={handleVerifyCode} className="space-y-4">
