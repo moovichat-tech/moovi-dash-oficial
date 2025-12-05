@@ -16,7 +16,6 @@ interface FloatingActionButtonProps {
 
 export function FloatingActionButton({ onSendCommand }: FloatingActionButtonProps) {
   const [open, setOpen] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
 
   return (
     <>
@@ -37,19 +36,11 @@ export function FloatingActionButton({ onSendCommand }: FloatingActionButtonProp
             </DialogDescription>
           </DialogHeader>
           <ChatCommand
-            onSendCommand={async (command) => {
-              try {
-                setIsProcessing(true);
-                await onSendCommand(command);
-                setOpen(false); // ✅ Fecha IMEDIATAMENTE após envio
-              } catch (err) {
-                // Se der erro no envio, NÃO fecha o modal
-                console.error('Erro ao enviar comando:', err);
-              } finally {
-                setIsProcessing(false);
-              }
+            onSendCommand={(command) => {
+              // Fire-and-forget: fecha imediatamente
+              setOpen(false);
+              onSendCommand(command);
             }}
-            isProcessing={isProcessing}
           />
         </DialogContent>
       </Dialog>

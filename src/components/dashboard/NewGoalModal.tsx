@@ -30,27 +30,25 @@ export function NewGoalModal({ open, onClose, onSendCommand }: NewGoalModalProps
     'quero juntar R$500 por mês para reserva de emergência',
   ];
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!command.trim()) return;
 
-    setLoading(true);
-    try {
-      await onSendCommand(command);
-      toast({
-        title: 'Meta criada com sucesso!',
-        description: 'Sua meta foi enviada para processamento.',
-      });
-      onClose();
-      setCommand('');
-    } catch (err) {
+    // Fire-and-forget: fecha imediatamente
+    toast({
+      title: 'Criando meta... 🎯',
+      description: 'Sua meta está sendo processada.',
+    });
+    onClose();
+    setCommand('');
+
+    // Executa em background
+    onSendCommand(command).catch((err) => {
       toast({
         title: 'Erro ao criar meta',
         description: err instanceof Error ? err.message : 'Erro desconhecido',
         variant: 'destructive',
       });
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
   return (
