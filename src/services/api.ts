@@ -344,6 +344,13 @@ export async function postDashboardCommand(
     });
 
     if (error) {
+      // Detectar rate limit (429) pela mensagem ou contexto
+      if (error.message?.includes('429') || error.message?.includes('non-2xx') || error.message?.includes('rate') || error.message?.includes('Muitos')) {
+        throw new ApiError(
+          'Espere 30 segundos para enviar outro pedido!',
+          429
+        );
+      }
       if (error.message?.includes('busy') || error.message?.includes('409')) {
         throw new ApiError(
           'O assistente está ocupado. Tente novamente em 5 segundos.',
