@@ -212,14 +212,22 @@ export function TransactionsList({ transactions, onEditTransaction }: Transactio
     });
   };
 
+  const sanitizeForCommand = (text: string): string => {
+    return text
+      .replace(/[/@&"`+\\]/g, '') // Remove caracteres problemáticos
+      .replace(/[^\w\s\$\.,!?\-áéíóúâêôãõçÁÉÍÓÚÂÊÔÃÕÇàèìòùÀÈÌÒÙüÜñÑ#:()']/g, '') // Remove outros não permitidos
+      .trim();
+  };
+
   const generateEditCommand = (transaction: Transaction, newValue: number) => {
     const tipoTexto = transaction.tipo === 'despesa' ? 'gasto' : 'receita';
     const valorOriginal = Math.abs(transaction.valor);
     const dataFormatada = formatDateForCommand(transaction.data);
     const moedaNome = getCurrencyTextName(currency);
     const transactionId = transaction.id;
+    const descricaoSanitizada = sanitizeForCommand(transaction.descricao);
     
-    return `alterar valor do ${tipoTexto} ID ${transactionId} de ${valorOriginal} ${moedaNome} em ${transaction.descricao} do dia ${dataFormatada} para ${newValue} ${moedaNome}`;
+    return `alterar valor do ${tipoTexto} ID ${transactionId} de ${valorOriginal} ${moedaNome} em ${descricaoSanitizada} do dia ${dataFormatada} para ${newValue} ${moedaNome}`;
   };
 
   const handleStartEdit = (transaction: Transaction) => {
