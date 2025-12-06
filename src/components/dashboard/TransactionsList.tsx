@@ -21,18 +21,43 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 import { Transaction, TransactionFilterState } from '@/types/dashboard';
-import { Search, TrendingUp, TrendingDown } from 'lucide-react';
+import { Search, TrendingUp, TrendingDown, Pencil, Check } from 'lucide-react';
 import { TransactionFilters } from './TransactionFilters';
 import { TransactionFilterBadges } from './TransactionFilterBadges';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useCurrency } from '@/contexts/CurrencyContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface TransactionsListProps {
   transactions: Transaction[];
+  onEditTransaction?: (command: string) => void;
 }
 
-export function TransactionsList({ transactions }: TransactionsListProps) {
-  const { formatCurrency } = useCurrency();
+const getCurrencyTextName = (code: string): string => {
+  const names: Record<string, string> = {
+    BRL: 'reais',
+    USD: 'dólares',
+    EUR: 'euros',
+    GBP: 'libras',
+    JPY: 'ienes',
+    CNY: 'yuanes',
+    ARS: 'pesos',
+    MXN: 'pesos',
+    CLP: 'pesos',
+    COP: 'pesos',
+    PEN: 'soles',
+    CAD: 'dólares',
+    AUD: 'dólares',
+    CHF: 'francos',
+    INR: 'rupias',
+    KRW: 'wones',
+  };
+  return names[code] || code;
+};
+
+export function TransactionsList({ transactions, onEditTransaction }: TransactionsListProps) {
+  const { formatCurrency, currency } = useCurrency();
+  const { toast } = useToast();
   const isMobile = useIsMobile();
   const [filterState, setFilterState] = useState<TransactionFilterState>({
     search: '',
@@ -44,6 +69,8 @@ export function TransactionsList({ transactions }: TransactionsListProps) {
     valorMax: undefined,
   });
   const [currentPage, setCurrentPage] = useState(1);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState<string>('');
   const itemsPerPage = 10;
 
   // Extrair categorias únicas
@@ -177,6 +204,48 @@ export function TransactionsList({ transactions }: TransactionsListProps) {
     });
   };
 
+  const formatDateForCommand = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('pt-BR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+  };
+
+  const generateEditCommand = (transaction: Transaction, newValue: number) => {
+    const tipoTexto = transaction.tipo === 'despesa' ? 'gasto' : 'receita';
+    const valorOriginal = Math.abs(transaction.valor);
+    const dataFormatada = formatDateForCommand(transaction.data);
+    const moedaNome = getCurrencyTextName(currency);
+    
+    return `alterar valor do ${tipoTexto} de ${valorOriginal} ${moedaNome} em ${transaction.descricao} do dia ${dataFormatada} para ${newValue} ${moedaNome}`;
+  };
+
+  const handleStartEdit = (transaction: Transaction) => {
+    setEditingId(transaction.id);
+    setEditValue(Math.abs(transaction.valor).toString());
+  };
+
+  const handleConfirmEdit = (transaction: Transaction) => {
+    const newValue = parseFloat(editValue);
+    if (isNaN(newValue) || newValue <= 0) {
+      toast({ title: 'Valor inválido', variant: 'destructive' });
+      setEditingId(null);
+      setEditValue('');
+      return;
+    }
+    
+    const command = generateEditCommand(transaction, newValue);
+    onEditTransaction?.(command);
+    setEditingId(null);
+    setEditValue('');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditValue('');
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -233,14 +302,43 @@ export function TransactionsList({ transactions }: TransactionsListProps) {
                       )}
                       <span className="font-medium truncate">{transaction.descricao}</span>
                     </div>
-                    <span
-                      className={`font-semibold whitespace-nowrap ${
-                        transaction.valor >= 0 ? 'text-success' : 'text-destructive'
-                      }`}
-                    >
-                      {transaction.valor > 0 ? '+' : '-'}
-                      {formatCurrency(Math.abs(transaction.valor))}
-                    </span>
+                    {editingId === transaction.id ? (
+                      <div className="flex items-center gap-1">
+                        <Input
+                          type="number"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleConfirmEdit(transaction);
+                            if (e.key === 'Escape') handleCancelEdit();
+                          }}
+                          onBlur={() => handleConfirmEdit(transaction)}
+                          className="w-20 h-7 text-right text-sm"
+                          autoFocus
+                        />
+                        <Check 
+                          className="h-4 w-4 cursor-pointer text-success hover:text-success/80 flex-shrink-0" 
+                          onClick={() => handleConfirmEdit(transaction)}
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1">
+                        <span
+                          className={`font-semibold whitespace-nowrap ${
+                            transaction.valor >= 0 ? 'text-success' : 'text-destructive'
+                          }`}
+                        >
+                          {transaction.valor > 0 ? '+' : '-'}
+                          {formatCurrency(Math.abs(transaction.valor))}
+                        </span>
+                        {onEditTransaction && (
+                          <Pencil 
+                            className="h-3.5 w-3.5 cursor-pointer text-muted-foreground hover:text-primary flex-shrink-0" 
+                            onClick={() => handleStartEdit(transaction)}
+                          />
+                        )}
+                      </div>
+                    )}
                   </div>
                   
                   <Separator />
@@ -297,16 +395,45 @@ export function TransactionsList({ transactions }: TransactionsListProps) {
                         <Badge variant="outline">{transaction.categoria}</Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        <span
-                          className={
-                            transaction.valor >= 0
-                              ? 'text-success font-semibold'
-                              : 'text-destructive font-semibold'
-                          }
-                        >
-                          {transaction.valor > 0 ? '+' : '-'}
-                          {formatCurrency(Math.abs(transaction.valor))}
-                        </span>
+                        {editingId === transaction.id ? (
+                          <div className="flex items-center justify-end gap-2">
+                            <Input
+                              type="number"
+                              value={editValue}
+                              onChange={(e) => setEditValue(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleConfirmEdit(transaction);
+                                if (e.key === 'Escape') handleCancelEdit();
+                              }}
+                              onBlur={() => handleConfirmEdit(transaction)}
+                              className="w-24 h-8 text-right"
+                              autoFocus
+                            />
+                            <Check 
+                              className="h-4 w-4 cursor-pointer text-success hover:text-success/80" 
+                              onClick={() => handleConfirmEdit(transaction)}
+                            />
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-end gap-2">
+                            <span
+                              className={
+                                transaction.valor >= 0
+                                  ? 'text-success font-semibold'
+                                  : 'text-destructive font-semibold'
+                              }
+                            >
+                              {transaction.valor > 0 ? '+' : '-'}
+                              {formatCurrency(Math.abs(transaction.valor))}
+                            </span>
+                            {onEditTransaction && (
+                              <Pencil 
+                                className="h-4 w-4 cursor-pointer text-muted-foreground hover:text-primary" 
+                                onClick={() => handleStartEdit(transaction)}
+                              />
+                            )}
+                          </div>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))
