@@ -205,7 +205,9 @@ export function TransactionsList({ transactions, onEditTransaction }: Transactio
   };
 
   const formatDateForCommand = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR', {
+    // Adiciona hora do meio-dia para evitar problemas de timezone
+    const dateWithTime = dateString.includes('T') ? dateString : `${dateString}T12:00:00`;
+    return new Date(dateWithTime).toLocaleDateString('pt-BR', {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
@@ -220,14 +222,14 @@ export function TransactionsList({ transactions, onEditTransaction }: Transactio
   };
 
   const generateEditCommand = (transaction: Transaction, newValue: number) => {
-    const tipoTexto = transaction.tipo === 'despesa' ? 'gasto' : 'receita';
+    // Usar o sinal do valor para determinar o tipo (igual a UI faz)
+    const tipoTexto = transaction.valor < 0 ? 'gasto' : 'receita';
     const valorOriginal = Math.abs(transaction.valor);
-    const dataFormatada = formatDateForCommand(transaction.data);
     const moedaNome = getCurrencyTextName(currency);
     const transactionId = transaction.id;
-    const descricaoSanitizada = sanitizeForCommand(transaction.descricao);
     
-    return `alterar valor do ${tipoTexto} ID ${transactionId} de ${valorOriginal} ${moedaNome} em ${descricaoSanitizada} do dia ${dataFormatada} para ${newValue} ${moedaNome}`;
+    // Comando simplificado: ID é único, não precisa de descrição/data
+    return `alterar valor do ${tipoTexto} ID ${transactionId} de ${valorOriginal} ${moedaNome} para ${newValue} ${moedaNome}`;
   };
 
   const handleStartEdit = (transaction: Transaction) => {
