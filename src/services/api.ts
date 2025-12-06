@@ -324,7 +324,7 @@ export async function postDashboardCommand(
     .min(1, 'Comando não pode estar vazio')
     .max(500, 'Comando muito longo. Máximo de 500 caracteres.')
     .regex(
-      /^[a-zA-Z0-9\s\$\.,!?áéíóúâêôãõçÁÉÍÓÚÂÊÔÃÕÇ\-]+$/,
+      /^[a-zA-Z0-9\s\$\.,!?áéíóúâêôãõçÁÉÍÓÚÂÊÔÃÕÇàèìòùÀÈÌÒÙüÜñÑ#\-:()']+$/,
       'Comando contém caracteres inválidos. Use apenas letras, números e pontuação básica.'
     );
 
