@@ -217,8 +217,9 @@ export function TransactionsList({ transactions, onEditTransaction }: Transactio
     const valorOriginal = Math.abs(transaction.valor);
     const dataFormatada = formatDateForCommand(transaction.data);
     const moedaNome = getCurrencyTextName(currency);
+    const transactionId = transaction.id;
     
-    return `alterar valor do ${tipoTexto} de ${valorOriginal} ${moedaNome} em ${transaction.descricao} do dia ${dataFormatada} para ${newValue} ${moedaNome}`;
+    return `alterar valor do ${tipoTexto} ID ${transactionId} de ${valorOriginal} ${moedaNome} em ${transaction.descricao} do dia ${dataFormatada} para ${newValue} ${moedaNome}`;
   };
 
   const handleStartEdit = (transaction: Transaction) => {
