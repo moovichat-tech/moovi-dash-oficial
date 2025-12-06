@@ -176,7 +176,7 @@ export default function Dashboard({ jid, phoneNumber, onLogout, onNavigateToAnal
               onSendCommand={sendCommand}
             />
 
-            <TransactionsList transactions={data.transacoes || []} />
+            <TransactionsList transactions={data.transacoes || []} onEditTransaction={sendCommand} />
           </CurrencyProvider>
         )}
       </main>
