@@ -17,7 +17,7 @@ const RATE_LIMIT = {
 const commandSchema = z.string()
   .min(1, 'Comando não pode estar vazio')
   .max(500, 'Comando muito longo')
-  .regex(/^[a-zA-Z0-9\s\$\.,!?áéíóúâêôãõçÁÉÍÓÚÂÊÔÃÕÇ\-]+$/, 'Comando contém caracteres inválidos');
+  .regex(/^[a-zA-Z0-9\s\$\.,!?áéíóúâêôãõçÁÉÍÓÚÂÊÔÃÕÇàèìòùÀÈÌÒÙüÜñÑ#\-:()']+$/, 'Comando contém caracteres inválidos');
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
