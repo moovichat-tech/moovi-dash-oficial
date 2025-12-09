@@ -38,3 +38,25 @@ export function formatCurrency(value: number, currencyCode: string = 'BRL'): str
 export function getCurrencyInfo(currencyCode: string): CurrencyInfo {
   return CURRENCY_CONFIG[currencyCode] || CURRENCY_CONFIG.BRL;
 }
+
+export function getCurrencyTextName(code: string): string {
+  const names: Record<string, string> = {
+    BRL: 'reais',
+    USD: 'dólares',
+    EUR: 'euros',
+    GBP: 'libras',
+    JPY: 'ienes',
+    CNY: 'yuanes',
+    ARS: 'pesos',
+    MXN: 'pesos',
+    CLP: 'pesos',
+    COP: 'pesos',
+    PEN: 'soles',
+    CAD: 'dólares',
+    AUD: 'dólares',
+    CHF: 'francos',
+    INR: 'rupias',
+    KRW: 'wones',
+  };
+  return names[code] || code;
+}

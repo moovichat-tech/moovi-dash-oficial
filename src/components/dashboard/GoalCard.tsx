@@ -1,19 +1,29 @@
-import { Target } from 'lucide-react';
+import { useState } from 'react';
+import { Target, Pencil, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Goal } from '@/types/dashboard';
 import { differenceInDays } from 'date-fns';
 import { cardVariants, hoverScale } from '@/lib/animations';
 import { useCurrency } from '@/contexts/CurrencyContext';
+import { getCurrencyTextName } from '@/lib/currency';
 
 interface GoalCardProps {
   goal: Goal;
+  onEditGoal?: (command: string) => void;
 }
 
-export function GoalCard({ goal }: GoalCardProps) {
-  const { formatCurrency } = useCurrency();
+type EditField = 'valor_guardado' | 'valor_total' | 'valor_mensal' | null;
+
+export function GoalCard({ goal, onEditGoal }: GoalCardProps) {
+  const { formatCurrency, currency } = useCurrency();
+  const [editingField, setEditingField] = useState<EditField>(null);
+  const [editValue, setEditValue] = useState('');
+
   const isRecurringGoal = goal.recorrencia === 'mensal';
   
   const progress = isRecurringGoal
@@ -33,6 +43,104 @@ export function GoalCard({ goal }: GoalCardProps) {
         : 'in_progress';
 
   const isNearCompletion = progress >= 80 && progress < 100;
+
+  const handleStartEdit = (field: EditField) => {
+    if (!field) return;
+    let currentValue = 0;
+    if (field === 'valor_guardado') currentValue = goal.valor_guardado;
+    else if (field === 'valor_total') currentValue = goal.valor_total || 0;
+    else if (field === 'valor_mensal') currentValue = goal.valor_mensal || 0;
+    
+    setEditValue(currentValue.toString());
+    setEditingField(field);
+  };
+
+  const handleConfirmEdit = () => {
+    if (!editingField || !onEditGoal) return;
+    
+    const newValue = parseFloat(editValue);
+    if (isNaN(newValue)) {
+      setEditingField(null);
+      setEditValue('');
+      return;
+    }
+
+    let currentValue = 0;
+    let fieldLabel = '';
+    
+    if (editingField === 'valor_guardado') {
+      currentValue = goal.valor_guardado;
+      fieldLabel = 'valor guardado';
+    } else if (editingField === 'valor_total') {
+      currentValue = goal.valor_total || 0;
+      fieldLabel = 'valor total';
+    } else if (editingField === 'valor_mensal') {
+      currentValue = goal.valor_mensal || 0;
+      fieldLabel = 'valor mensal';
+    }
+
+    if (newValue !== currentValue) {
+      const moedaNome = getCurrencyTextName(currency);
+      const command = `alterar meta ID ${goal.id} '${goal.descricao}' - ${fieldLabel} de ${currentValue} ${moedaNome} para ${newValue} ${moedaNome}`;
+      onEditGoal(command);
+    }
+    
+    setEditingField(null);
+    setEditValue('');
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleConfirmEdit();
+    } else if (e.key === 'Escape') {
+      setEditingField(null);
+      setEditValue('');
+    }
+  };
+
+  const renderEditableValue = (field: EditField, value: number, suffix?: string) => {
+    if (editingField === field) {
+      return (
+        <span className="inline-flex items-center gap-1">
+          <Input
+            type="number"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onBlur={handleConfirmEdit}
+            className="h-5 w-20 text-xs px-1"
+            autoFocus
+          />
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-5 w-5"
+            onClick={handleConfirmEdit}
+          >
+            <Check className="h-3 w-3 text-success" />
+          </Button>
+          {suffix}
+        </span>
+      );
+    }
+    
+    return (
+      <span className="inline-flex items-center gap-1">
+        {formatCurrency(value)}
+        {onEditGoal && (
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-4 w-4 p-0 hover:bg-transparent"
+            onClick={() => handleStartEdit(field)}
+          >
+            <Pencil className="h-3 w-3 text-muted-foreground hover:text-primary" />
+          </Button>
+        )}
+        {suffix}
+      </span>
+    );
+  };
 
   return (
     <motion.div
@@ -62,11 +170,11 @@ export function GoalCard({ goal }: GoalCardProps) {
               <CardDescription className="mt-1">
                 {isRecurringGoal ? (
                   <>
-                    {formatCurrency(goal.valor_guardado)} de {formatCurrency(goal.valor_mensal || 0)} (mensal)
+                    {renderEditableValue('valor_guardado', goal.valor_guardado)} de {renderEditableValue('valor_mensal', goal.valor_mensal || 0, ' (mensal)')}
                   </>
                 ) : (
                   <>
-                    {formatCurrency(goal.valor_guardado)} de {formatCurrency(goal.valor_total || 0)}
+                    {renderEditableValue('valor_guardado', goal.valor_guardado)} de {renderEditableValue('valor_total', goal.valor_total || 0)}
                   </>
                 )}
               </CardDescription>

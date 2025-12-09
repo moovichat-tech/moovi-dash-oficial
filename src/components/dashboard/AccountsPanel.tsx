@@ -130,7 +130,7 @@ export function AccountsPanel({ accounts, budgets, onSendCommand }: AccountsPane
             animate="visible"
           >
             {safeAccounts.map((account) => (
-              <AccountCard key={account.id} account={account} />
+              <AccountCard key={account.id} account={account} onEditAccount={onSendCommand} />
             ))}
           </motion.div>
         )}
@@ -145,7 +145,7 @@ export function AccountsPanel({ accounts, budgets, onSendCommand }: AccountsPane
           animate="visible"
         >
           {(budgets || []).map((budget) => (
-            <LimitCard key={budget.categoria} budget={budget} />
+            <LimitCard key={budget.categoria} budget={budget} onEditLimit={onSendCommand} />
           ))}
         </motion.div>
       </div>

@@ -90,7 +90,7 @@ export function GoalsPanel({ metas, onSendCommand }: GoalsPanelProps) {
               animate="visible"
             >
               {metas.map((goal) => (
-                <GoalCard key={goal.id} goal={goal} />
+                <GoalCard key={goal.id} goal={goal} onEditGoal={onSendCommand} />
               ))}
             </motion.div>
           )}
