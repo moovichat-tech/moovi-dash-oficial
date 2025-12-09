@@ -110,15 +110,20 @@ export class ApiError extends Error {
  * Processa dados brutos da API e calcula valores agregados
  */
 function processRawDashboardData(raw: any, jid: string): DashboardData {
-  // ✅ Usar array pré-filtrado pela API (mês atual para dashboard)
-  const transacoesDoPeriodo: any[] = Array.isArray(raw.transacoes_do_periodo) 
-    ? raw.transacoes_do_periodo 
-    : [];
-  
-  // ✅ Usar todas_transacoes para Analytics (histórico completo)
+  // ✅ FONTE ÚNICA: todas_transacoes contém TODAS as transações
   const todasTransacoes: any[] = Array.isArray(raw.todas_transacoes) 
     ? raw.todas_transacoes 
     : [];
+  
+  // ✅ Filtrar transações do mês atual para Dashboard
+  const now = new Date();
+  const mesAtual = now.getMonth();
+  const anoAtual = now.getFullYear();
+  
+  const transacoesDoPeriodo = todasTransacoes.filter(t => {
+    const dataTransacao = new Date(t.data);
+    return dataTransacao.getMonth() === mesAtual && dataTransacao.getFullYear() === anoAtual;
+  });
     
   const limitesRaw = Array.isArray(raw.limites) ? raw.limites : [];
 
@@ -207,16 +212,15 @@ function processRawDashboardData(raw: any, jid: string): DashboardData {
   if (IS_DEV) {
     console.log('📊 Dados recebidos da API:', {
       saldo_total_geral: raw.saldo_total_geral,
-      transacoes_no_periodo: transacoesDoPeriodo.length,
-      todas_transacoes: todasTransacoes.length,
-      filtros_aplicados: raw.filtros_aplicados,
+      todas_transacoes_total: todasTransacoes.length,
+      transacoes_mes_atual: transacoesDoPeriodo.length,
     });
 
     console.log('📊 Dados processados:', {
       saldoTotal,
       receitaMensal,
       despesaMensal,
-      totalTransacoes: transacoesDoPeriodo.length,
+      transacoesMesAtual: transacoesDoPeriodo.length,
       todasTransacoes: todasTransacoes.length,
       limitesComGastos: limites.length,
     });
