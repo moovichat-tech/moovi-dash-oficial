@@ -85,9 +85,21 @@ export function useAnalytics(
   const monthlyComparison = useMemo((): MonthlyComparison[] => {
     if (filteredTransactions.length === 0) return [];
 
+    // Para "Tudo", usar a data da primeira transação como início
+    // Ordenar transações por data e pegar a mais antiga
+    const sortedByDate = [...filteredTransactions].sort((a, b) => 
+      parseISO(a.data).getTime() - parseISO(b.data).getTime()
+    );
+    const firstTransactionDate = parseISO(sortedByDate[0].data);
+    
+    // Usar a primeira transação como início se dateRange.from for muito antiga (1970)
+    const effectiveStart = dateRange.from.getFullYear() < 2000 
+      ? firstTransactionDate 
+      : dateRange.from;
+
     // Gerar array de meses no range
     const monthsInRange = eachMonthOfInterval({
-      start: dateRange.from,
+      start: effectiveStart,
       end: dateRange.to,
     });
 
