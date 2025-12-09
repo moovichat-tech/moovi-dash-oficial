@@ -4,7 +4,7 @@ import { ArrowLeft, FileDown, ChevronDown } from "lucide-react";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { useChartExport } from "@/hooks/useChartExport";
-import { useExportTransactions } from "@/hooks/useExportTransactions";
+import { useExportTransactions, FullExportData } from "@/hooks/useExportTransactions";
 import { CategoryPieChart } from "@/components/analytics/CategoryPieChart";
 import { MonthlyComparison } from "@/components/analytics/MonthlyComparison";
 import { CategoryTrendChart } from "@/components/analytics/CategoryTrendChart";
@@ -17,9 +17,10 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PeriodFilter } from "@/types/analytics";
+import { PeriodFilter, getPeriodDates } from "@/types/analytics";
 import { CurrencyProvider } from "@/contexts/CurrencyContext";
 
 interface AnalyticsProps {
@@ -31,13 +32,16 @@ interface AnalyticsProps {
 export default function Analytics({ jid, phoneNumber, onBack }: AnalyticsProps) {
   const { data, loading } = useDashboard(jid, phoneNumber);
   const { exportMultipleToPDF } = useChartExport();
-  const { exportToExcel, exportToCSV } = useExportTransactions();
+  const { exportToExcel, exportToCSV, exportFullReport } = useExportTransactions();
 
   // Estado do filtro de período (default: últimos 6 meses)
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>({
     type: "preset",
     preset: "6m",
   });
+  
+  // Obter datas do período para exportação
+  const dateRange = getPeriodDates(periodFilter);
 
   const { categorySpending, monthlyComparison, categoryTrends, insights, filteredTransactions } = useAnalytics(
     data,
@@ -62,6 +66,29 @@ export default function Analytics({ jid, phoneNumber, onBack }: AnalyticsProps) 
     const bgColor = getComputedStyle(document.documentElement).getPropertyValue("--background").trim();
 
     exportMultipleToPDF(elements, "analytics-completo", bgColor ? `hsl(${bgColor})` : "#ffffff");
+  };
+
+  // Exportação profissional completa
+  const handleFullExport = () => {
+    const totalReceitas = filteredTransactions
+      .filter(t => t.valor >= 0)
+      .reduce((sum, t) => sum + t.valor, 0);
+    const totalDespesas = filteredTransactions
+      .filter(t => t.valor < 0)
+      .reduce((sum, t) => sum + Math.abs(t.valor), 0);
+    
+    const exportData: FullExportData = {
+      transactions: filteredTransactions,
+      categorySpending,
+      monthlyComparison,
+      totalReceitas,
+      totalDespesas,
+      saldo: totalReceitas - totalDespesas,
+      periodo: dateRange,
+      currency: data?.configuracoes_usuario?.moeda || 'BRL'
+    };
+    
+    exportFullReport(exportData, 'planejamento-financeiro');
   };
 
   if (loading) {
@@ -167,8 +194,12 @@ export default function Analytics({ jid, phoneNumber, onBack }: AnalyticsProps) 
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={handleFullExport}>
+                        📈 Relatório Completo (.xlsx)
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => exportToExcel(filteredTransactions, "extrato-transacoes")}>
-                        📊 Excel (.xlsx)
+                        📊 Transações Simples (.xlsx)
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => exportToCSV(filteredTransactions, "extrato-transacoes")}>
                         📄 CSV (.csv)
