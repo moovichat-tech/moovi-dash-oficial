@@ -1,18 +1,18 @@
-import { Moon, Sun, LogOut, RefreshCw, BarChart3, Menu } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { useTheme } from '@/hooks/useTheme';
-import { useDashboard } from '@/hooks/useDashboard';
-import { BalanceCards } from '@/components/dashboard/BalanceCards';
-import { TransactionsList } from '@/components/dashboard/TransactionsList';
-import { FinancialChart } from '@/components/dashboard/FinancialChart';
-import { FloatingActionButton } from '@/components/dashboard/FloatingActionButton';
-import { NotFoundState } from '@/components/dashboard/NotFoundState';
-import { Skeleton } from '@/components/ui/skeleton';
-import { GoalsPanel } from '@/components/dashboard/GoalsPanel';
-import { AccountsPanel } from '@/components/dashboard/AccountsPanel';
-import { CurrencyProvider } from '@/contexts/CurrencyContext';
-import mooviLogo from '@/assets/moovi-logo-new.png';
+import { Moon, Sun, LogOut, RefreshCw, BarChart3, Menu } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { useTheme } from "@/hooks/useTheme";
+import { useDashboard } from "@/hooks/useDashboard";
+import { BalanceCards } from "@/components/dashboard/BalanceCards";
+import { TransactionsList } from "@/components/dashboard/TransactionsList";
+import { FinancialChart } from "@/components/dashboard/FinancialChart";
+import { FloatingActionButton } from "@/components/dashboard/FloatingActionButton";
+import { NotFoundState } from "@/components/dashboard/NotFoundState";
+import { Skeleton } from "@/components/ui/skeleton";
+import { GoalsPanel } from "@/components/dashboard/GoalsPanel";
+import { AccountsPanel } from "@/components/dashboard/AccountsPanel";
+import { CurrencyProvider } from "@/contexts/CurrencyContext";
+import mooviLogo from "@/assets/moovi-logo-new.png";
 
 interface DashboardProps {
   jid: string;
@@ -54,7 +54,7 @@ export default function Dashboard({ jid, phoneNumber, onLogout, onNavigateToAnal
             <img src={mooviLogo} alt="Moovi" className="h-7 sm:h-8" />
             <h1 className="text-lg sm:text-xl font-bold hidden sm:block">Moovi.dash</h1>
           </div>
-          
+
           <div className="flex items-center gap-2">
             {/* Mobile: Hamburger Menu */}
             <Sheet>
@@ -69,21 +69,13 @@ export default function Dashboard({ jid, phoneNumber, onLogout, onNavigateToAnal
                 </SheetHeader>
                 <div className="flex flex-col gap-3 mt-6">
                   {onNavigateToAnalytics && (
-                    <Button
-                      variant="outline"
-                      onClick={onNavigateToAnalytics}
-                      className="justify-start"
-                    >
+                    <Button variant="outline" onClick={onNavigateToAnalytics} className="justify-start">
                       <BarChart3 className="h-4 w-4 mr-2" />
                       Analytics
                     </Button>
                   )}
-                  <Button
-                    variant="outline"
-                    onClick={toggleTheme}
-                    className="justify-start"
-                  >
-                    {theme === 'light' ? (
+                  <Button variant="outline" onClick={toggleTheme} className="justify-start">
+                    {theme === "light" ? (
                       <>
                         <Moon className="h-4 w-4 mr-2" />
                         Modo Escuro
@@ -95,11 +87,7 @@ export default function Dashboard({ jid, phoneNumber, onLogout, onNavigateToAnal
                       </>
                     )}
                   </Button>
-                  <Button
-                    variant="outline"
-                    onClick={onLogout}
-                    className="justify-start"
-                  >
+                  <Button variant="outline" onClick={onLogout} className="justify-start">
                     <LogOut className="h-4 w-4 mr-2" />
                     Sair
                   </Button>
@@ -109,47 +97,23 @@ export default function Dashboard({ jid, phoneNumber, onLogout, onNavigateToAnal
 
             {/* Desktop: Inline Buttons */}
             {onNavigateToAnalytics && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onNavigateToAnalytics}
-                className="hidden md:flex"
-              >
+              <Button variant="outline" size="sm" onClick={onNavigateToAnalytics} className="hidden md:flex">
                 <BarChart3 className="h-4 w-4 md:mr-2" />
-                <span className="hidden lg:inline">Analytics</span>
+                <span className="hidden lg:inline">Análise</span>
               </Button>
             )}
-            
+
             {/* Always Visible: Refresh */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={refresh}
-              disabled={loading}
-            >
-              <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
+            <Button variant="ghost" size="icon" onClick={refresh} disabled={loading}>
+              <RefreshCw className={`h-5 w-5 ${loading ? "animate-spin" : ""}`} />
             </Button>
-            
+
             {/* Desktop Only: Theme & Logout */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              className="hidden md:flex"
-            >
-              {theme === 'light' ? (
-                <Moon className="h-5 w-5" />
-              ) : (
-                <Sun className="h-5 w-5" />
-              )}
+            <Button variant="ghost" size="icon" onClick={toggleTheme} className="hidden md:flex">
+              {theme === "light" ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
             </Button>
-            
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onLogout}
-              className="hidden md:flex"
-            >
+
+            <Button variant="ghost" size="icon" onClick={onLogout} className="hidden md:flex">
               <LogOut className="h-5 w-5" />
             </Button>
           </div>
@@ -159,7 +123,7 @@ export default function Dashboard({ jid, phoneNumber, onLogout, onNavigateToAnal
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 py-4 md:py-6 space-y-4 md:space-y-6 pb-24">
         {data && (
-          <CurrencyProvider currency={data.configuracoes_usuario?.moeda || 'BRL'}>
+          <CurrencyProvider currency={data.configuracoes_usuario?.moeda || "BRL"}>
             <BalanceCards
               saldoTotal={data.saldo_total}
               receitaMensal={data.receita_mensal}
@@ -170,9 +134,9 @@ export default function Dashboard({ jid, phoneNumber, onLogout, onNavigateToAnal
 
             <GoalsPanel metas={data.metas || []} onSendCommand={sendCommand} />
 
-            <AccountsPanel 
-              accounts={data.contas_cartoes || []} 
-              budgets={data.limites || []} 
+            <AccountsPanel
+              accounts={data.contas_cartoes || []}
+              budgets={data.limites || []}
               onSendCommand={sendCommand}
             />
 
