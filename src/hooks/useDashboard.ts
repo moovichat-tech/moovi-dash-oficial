@@ -2,12 +2,24 @@ import { useState, useEffect, useCallback } from 'react';
 import { DashboardData } from '@/types/dashboard';
 import { getDashboardData, postDashboardCommand, ApiError } from '@/services/api';
 import { toast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 export function useDashboard(jid: string | null, phoneNumber: string | null) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isNotFound, setIsNotFound] = useState(false);
+
+  const handleAuthError = useCallback(async () => {
+    // Sessão inválida - fazer logout e redirecionar para login
+    toast({
+      title: 'Sessão expirada',
+      description: 'Por favor, faça login novamente.',
+      variant: 'destructive',
+    });
+    await supabase.auth.signOut();
+  }, []);
+
   const loadDashboard = useCallback(async () => {
     if (!phoneNumber) {
       setLoading(false);
@@ -21,6 +33,12 @@ export function useDashboard(jid: string | null, phoneNumber: string | null) {
       const dashboardData = await getDashboardData(phoneNumber, jid || undefined);
       setData(dashboardData);
     } catch (err) {
+      // Verificar se é erro de autenticação (401)
+      if (err instanceof ApiError && err.statusCode === 401) {
+        await handleAuthError();
+        return;
+      }
+      
       if (err instanceof ApiError && err.isNotFound) {
         setIsNotFound(true);
         setError(err.message);
@@ -35,7 +53,7 @@ export function useDashboard(jid: string | null, phoneNumber: string | null) {
     } finally {
       setLoading(false);
     }
-  }, [jid, phoneNumber]);
+  }, [jid, phoneNumber, handleAuthError]);
 
   useEffect(() => {
     loadDashboard();

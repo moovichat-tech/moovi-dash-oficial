@@ -258,6 +258,13 @@ export async function getDashboardData(phoneNumber: string, jid?: string): Promi
     });
 
     if (error) {
+      // Verificar se é erro de autenticação
+      if (error.message?.toLowerCase().includes('unauthorized') || 
+          error.message?.includes('401') ||
+          error.message?.includes('Auth session missing')) {
+        throw new ApiError('Sessão expirada', 401);
+      }
+      
       if (error.message?.includes('not found') || error.message?.includes('404')) {
         throw new ApiError(
           'Dados não encontrados. Configure seu dashboard primeiro.',
@@ -293,6 +300,14 @@ export async function getDashboardData(phoneNumber: string, jid?: string): Promi
     if (error instanceof ApiError) {
       throw error;
     }
+    
+    // Capturar erros genéricos que podem indicar 401
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.toLowerCase().includes('unauthorized') || 
+        errorMessage.includes('401')) {
+      throw new ApiError('Sessão expirada', 401);
+    }
+    
     throw new ApiError('Erro de conexão com o servidor');
   }
 }
