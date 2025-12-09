@@ -11,18 +11,50 @@ import {
 import { format, isWithinInterval, eachMonthOfInterval, startOfDay, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-// Helper para cores consistentes
+// Paleta de cores distintas para categorias (20+ cores únicas)
+const CATEGORY_COLORS = [
+  '#FF6B6B', // Vermelho coral
+  '#4ECDC4', // Turquesa
+  '#45B7D1', // Azul céu
+  '#96CEB4', // Verde menta
+  '#FFEAA7', // Amarelo pastel
+  '#DDA0DD', // Ameixa
+  '#98D8C8', // Verde água
+  '#F7DC6F', // Amarelo dourado
+  '#BB8FCE', // Roxo lavanda
+  '#85C1E9', // Azul claro
+  '#F8B500', // Laranja dourado
+  '#00CEC9', // Ciano
+  '#E17055', // Terracota
+  '#74B9FF', // Azul bebê
+  '#A29BFE', // Lilás
+  '#FD79A8', // Rosa pink
+  '#00B894', // Verde esmeralda
+  '#FDCB6E', // Amarelo mostarda
+  '#6C5CE7', // Roxo índigo
+  '#81ECEC', // Ciano claro
+  '#FAB1A0', // Salmão
+  '#55A3FF', // Azul royal
+  '#FF7675', // Coral claro
+  '#A3CB38', // Verde limão
+];
+
+// Map para garantir cores consistentes por categoria
+const categoryColorMap = new Map<string, string>();
+let colorIndex = 0;
+
 function getCategoryColor(categoria: string): string {
-  const colors = [
-    'hsl(var(--chart-1))',
-    'hsl(var(--chart-2))',
-    'hsl(var(--chart-3))',
-    'hsl(var(--chart-4))',
-    'hsl(var(--chart-5))',
-  ];
+  // Se já tem cor atribuída, retorna ela
+  if (categoryColorMap.has(categoria)) {
+    return categoryColorMap.get(categoria)!;
+  }
   
-  const hash = categoria.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return colors[hash % colors.length];
+  // Atribui a próxima cor disponível
+  const color = CATEGORY_COLORS[colorIndex % CATEGORY_COLORS.length];
+  categoryColorMap.set(categoria, color);
+  colorIndex++;
+  
+  return color;
 }
 
 export function useAnalytics(
