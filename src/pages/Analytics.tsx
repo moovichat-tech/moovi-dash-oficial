@@ -1,15 +1,24 @@
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, FileDown } from 'lucide-react';
+import { ArrowLeft, FileDown, ChevronDown } from 'lucide-react';
 import { useDashboard } from '@/hooks/useDashboard';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { useChartExport } from '@/hooks/useChartExport';
+import { useExportTransactions } from '@/hooks/useExportTransactions';
 import { CategoryPieChart } from '@/components/analytics/CategoryPieChart';
 import { MonthlyComparison } from '@/components/analytics/MonthlyComparison';
 import { CategoryTrendChart } from '@/components/analytics/CategoryTrendChart';
 import { InsightCards } from '@/components/analytics/InsightCards';
 import { PeriodFilterBar } from '@/components/analytics/PeriodFilterBar';
+import { TransactionReportTable } from '@/components/analytics/TransactionReportTable';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { PeriodFilter } from '@/types/analytics';
 import { CurrencyProvider } from '@/contexts/CurrencyContext';
 
@@ -22,6 +31,7 @@ interface AnalyticsProps {
 export default function Analytics({ jid, phoneNumber, onBack }: AnalyticsProps) {
   const { data, loading } = useDashboard(jid, phoneNumber);
   const { exportMultipleToPDF } = useChartExport();
+  const { exportToExcel, exportToCSV } = useExportTransactions();
   
   // Estado do filtro de período (default: últimos 6 meses)
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>({
@@ -29,7 +39,7 @@ export default function Analytics({ jid, phoneNumber, onBack }: AnalyticsProps) 
     preset: '6m',
   });
   
-  const { categorySpending, monthlyComparison, categoryTrends, insights } = 
+  const { categorySpending, monthlyComparison, categoryTrends, insights, filteredTransactions } = 
     useAnalytics(data, periodFilter);
 
   // Refs para todos os gráficos
@@ -143,6 +153,35 @@ export default function Analytics({ jid, phoneNumber, onBack }: AnalyticsProps) 
               <div ref={lineChartRef}>
                 <CategoryTrendChart trends={categoryTrends} />
               </div>
+
+              {/* Relatório Detalhado de Transações */}
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                  <CardTitle className="text-xl font-semibold">
+                    Relatório Detalhado de Transações
+                  </CardTitle>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <FileDown className="mr-2 h-4 w-4" />
+                        Exportar
+                        <ChevronDown className="ml-2 h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => exportToExcel(filteredTransactions, 'transacoes-relatorio')}>
+                        📊 Excel (.xlsx)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => exportToCSV(filteredTransactions, 'transacoes-relatorio')}>
+                        📄 CSV (.csv)
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </CardHeader>
+                <CardContent>
+                  <TransactionReportTable transactions={filteredTransactions} />
+                </CardContent>
+              </Card>
             </>
           )}
         </div>
