@@ -68,6 +68,7 @@ export interface DashboardData {
   receita_mensal: number;
   despesa_mensal: number;
   transacoes: Transaction[];
+  todas_transacoes?: Transaction[]; // Histórico completo para Analytics
   contas_cartoes: Account[];
   categorias: Category[];
   metas: Goal[];
