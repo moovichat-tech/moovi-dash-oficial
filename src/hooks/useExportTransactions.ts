@@ -3,6 +3,7 @@ import { Transaction } from '@/types/dashboard';
 import { CategorySpending, MonthlyComparison } from '@/types/analytics';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { removeEmojis } from '@/lib/utils';
 
 interface ExportableTransaction {
   Data: string;
@@ -22,10 +23,6 @@ export interface FullExportData {
   saldo: number;
   periodo: { from: Date; to: Date };
   currency: string;
-}
-
-function removeEmojis(text: string): string {
-  return text.replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '').trim();
 }
 
 function formatTransactionsForExport(transactions: Transaction[]): ExportableTransaction[] {
