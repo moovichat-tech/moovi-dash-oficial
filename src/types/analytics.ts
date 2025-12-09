@@ -1,5 +1,5 @@
 import { Transaction } from './dashboard';
-import { subMonths, startOfDay, endOfDay } from 'date-fns';
+import { subMonths, startOfDay, endOfDay, startOfMonth } from 'date-fns';
 
 export interface CategorySpending {
   categoria: string;
@@ -55,13 +55,13 @@ export function getPeriodDates(filter: PeriodFilter): { from: Date; to: Date } {
   } else {
     switch (filter.preset) {
       case '3m':
-        from = startOfDay(subMonths(now, 3));
+        from = startOfMonth(subMonths(now, 2)); // Mês atual + 2 anteriores = 3 meses
         break;
       case '6m':
-        from = startOfDay(subMonths(now, 6));
+        from = startOfMonth(subMonths(now, 5)); // Mês atual + 5 anteriores = 6 meses
         break;
       case '1y':
-        from = startOfDay(subMonths(now, 12));
+        from = startOfMonth(subMonths(now, 11)); // Mês atual + 11 anteriores = 12 meses
         break;
       case 'all':
       default:
