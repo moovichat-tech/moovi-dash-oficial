@@ -8,7 +8,7 @@ import {
   PeriodFilter,
   getPeriodDates 
 } from '@/types/analytics';
-import { format, isWithinInterval, eachMonthOfInterval, startOfDay } from 'date-fns';
+import { format, isWithinInterval, eachMonthOfInterval, startOfDay, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 // Helper para cores consistentes
@@ -39,8 +39,9 @@ export function useAnalytics(
     if (allTransactions.length === 0) return [];
 
     return allTransactions.filter(t => {
-      // Normalizar data para início do dia para comparação consistente
-      const transactionDate = startOfDay(new Date(t.data));
+      // ✅ FIX: Usar parseISO para evitar problemas de timezone
+      // parseISO trata "2025-12-09" como data LOCAL, não UTC
+      const transactionDate = startOfDay(parseISO(t.data));
       return isWithinInterval(transactionDate, {
         start: dateRange.from,
         end: dateRange.to,
@@ -94,9 +95,11 @@ export function useAnalytics(
       const monthKey = format(monthDate, 'yyyy-MM');
       const monthName = format(monthDate, 'MMMM yyyy', { locale: ptBR });
 
-      const monthTransactions = filteredTransactions.filter(t => 
-        t.data.startsWith(monthKey)
-      );
+      const monthTransactions = filteredTransactions.filter(t => {
+        // ✅ Usar parseISO para consistência no parsing de datas
+        const transactionMonth = format(parseISO(t.data), 'yyyy-MM');
+        return transactionMonth === monthKey;
+      });
 
       const receitas = monthTransactions
         .filter(t => t.valor >= 0)
