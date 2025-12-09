@@ -186,14 +186,21 @@ function processRawDashboardData(raw: any, jid: string): DashboardData {
 
   // E. Normalizar contas_cartoes e metas
   const contasCartoes = Array.isArray(raw.contas_cartao) 
-    ? raw.contas_cartao.map((c: any) => ({
-        id: c.id,
-        nome: c.nome,
-        tipo: 'cartao_credito' as const,
-        saldo: 0,
-        limite: c.limite_credito,
-        dia_vencimento: c.dia_vencimento,
-      }))
+    ? raw.contas_cartao.map((c: any) => {
+        // Calcular gastos no cartão somando transações vinculadas via id_conta_cartao
+        const gastoNoCartao = todasTransacoes
+          .filter((t: any) => t.id_conta_cartao === c.id && t.valor < 0)
+          .reduce((acc: number, t: any) => acc + Math.abs(t.valor), 0);
+        
+        return {
+          id: c.id,
+          nome: c.nome,
+          tipo: 'cartao_credito' as const,
+          saldo: gastoNoCartao,
+          limite: c.limite_credito,
+          dia_vencimento: c.dia_vencimento,
+        };
+      })
     : Array.isArray(raw.contas_cartoes) ? raw.contas_cartoes : [];
 
   const metas = Array.isArray(raw.metas_financeiras)
