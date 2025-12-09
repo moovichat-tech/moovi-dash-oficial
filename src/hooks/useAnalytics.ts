@@ -8,7 +8,7 @@ import {
   PeriodFilter,
   getPeriodDates 
 } from '@/types/analytics';
-import { format, isWithinInterval, eachMonthOfInterval } from 'date-fns';
+import { format, isWithinInterval, eachMonthOfInterval, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 // Helper para cores consistentes
@@ -37,7 +37,8 @@ export function useAnalytics(
     if (!data?.transacoes) return [];
 
     return data.transacoes.filter(t => {
-      const transactionDate = new Date(t.data);
+      // Normalizar data para início do dia para comparação consistente
+      const transactionDate = startOfDay(new Date(t.data));
       return isWithinInterval(transactionDate, {
         start: dateRange.from,
         end: dateRange.to,
