@@ -52,7 +52,7 @@ export default function Dashboard({ jid, phoneNumber, onLogout, onNavigateToAnal
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3 sm:gap-4">
             <img src={mooviLogo} alt="Moovi" className="h-7 sm:h-8" />
-            <h1 className="text-lg sm:text-xl font-bold hidden sm:block">Moovi.dash</h1>
+            <h1 className="text-lg sm:text-xl font-bold hidden sm:block">DASHBOARD</h1>
           </div>
 
           <div className="flex items-center gap-2">
