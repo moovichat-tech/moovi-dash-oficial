@@ -110,10 +110,16 @@ export class ApiError extends Error {
  * Processa dados brutos da API e calcula valores agregados
  */
 function processRawDashboardData(raw: any, jid: string): DashboardData {
-  // ✅ Usar array pré-filtrado pela API (sem filtros de data)
+  // ✅ Usar array pré-filtrado pela API (mês atual para dashboard)
   const transacoesDoPeriodo: any[] = Array.isArray(raw.transacoes_do_periodo) 
     ? raw.transacoes_do_periodo 
     : [];
+  
+  // ✅ Usar todas_transacoes para Analytics (histórico completo)
+  const todasTransacoes: any[] = Array.isArray(raw.todas_transacoes) 
+    ? raw.todas_transacoes 
+    : [];
+    
   const limitesRaw = Array.isArray(raw.limites) ? raw.limites : [];
 
   // ✅ Usar saldo total da API
@@ -202,6 +208,7 @@ function processRawDashboardData(raw: any, jid: string): DashboardData {
     console.log('📊 Dados recebidos da API:', {
       saldo_total_geral: raw.saldo_total_geral,
       transacoes_no_periodo: transacoesDoPeriodo.length,
+      todas_transacoes: todasTransacoes.length,
       filtros_aplicados: raw.filtros_aplicados,
     });
 
@@ -210,6 +217,7 @@ function processRawDashboardData(raw: any, jid: string): DashboardData {
       receitaMensal,
       despesaMensal,
       totalTransacoes: transacoesDoPeriodo.length,
+      todasTransacoes: todasTransacoes.length,
       limitesComGastos: limites.length,
     });
   }
@@ -234,6 +242,7 @@ function processRawDashboardData(raw: any, jid: string): DashboardData {
     receita_mensal: receitaMensal,
     despesa_mensal: despesaMensal,
     transacoes: transacoesDoPeriodo,
+    todas_transacoes: todasTransacoes, // Histórico completo para Analytics
     contas_cartoes: contasCartoes,
     categorias: Array.isArray(raw.categorias) ? raw.categorias : [],
     metas,

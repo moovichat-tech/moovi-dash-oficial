@@ -33,10 +33,12 @@ export function useAnalytics(
   const dateRange = useMemo(() => getPeriodDates(periodFilter), [periodFilter]);
 
   // Filtrar transações pelo período ANTES de processar
+  // ✅ Usar todas_transacoes para Analytics (histórico completo), fallback para transacoes
   const filteredTransactions = useMemo(() => {
-    if (!data?.transacoes) return [];
+    const allTransactions = data?.todas_transacoes ?? data?.transacoes ?? [];
+    if (allTransactions.length === 0) return [];
 
-    return data.transacoes.filter(t => {
+    return allTransactions.filter(t => {
       // Normalizar data para início do dia para comparação consistente
       const transactionDate = startOfDay(new Date(t.data));
       return isWithinInterval(transactionDate, {
