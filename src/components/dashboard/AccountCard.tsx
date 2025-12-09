@@ -221,7 +221,7 @@ export function AccountCard({ account, onEditAccount }: AccountCardProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <p className="text-2xl font-bold">{renderEditableValue('saldo', account.saldo)}</p>
+          <p className="text-2xl font-bold">{formatCurrency(account.saldo)}</p>
           <p className="text-xs text-muted-foreground">Saldo atual</p>
         </motion.div>
 
