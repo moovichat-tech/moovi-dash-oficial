@@ -206,5 +206,6 @@ export function useAnalytics(
     monthlyComparison,
     categoryTrends,
     insights,
+    filteredTransactions,
   };
 }
