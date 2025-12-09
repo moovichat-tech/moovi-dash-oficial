@@ -47,8 +47,8 @@ export function useAnalytics(
 
   // Gastos por categoria (AGORA USA TRANSAÇÕES FILTRADAS)
   const categorySpending = useMemo((): CategorySpending[] => {
-    const despesas = filteredTransactions.filter(t => t.tipo === 'despesa');
-    const total = despesas.reduce((sum, t) => sum + t.valor, 0);
+    const despesas = filteredTransactions.filter(t => t.valor < 0);
+    const total = despesas.reduce((sum, t) => sum + Math.abs(t.valor), 0);
 
     if (total === 0) return [];
 
@@ -63,7 +63,7 @@ export function useAnalytics(
           transacoes: [],
         };
       }
-      acc[t.categoria].total += t.valor;
+      acc[t.categoria].total += Math.abs(t.valor);
       acc[t.categoria].quantidade += 1;
       acc[t.categoria].transacoes.push(t);
       return acc;
@@ -96,15 +96,15 @@ export function useAnalytics(
       );
 
       const receitas = monthTransactions
-        .filter(t => t.tipo === 'receita')
+        .filter(t => t.valor >= 0)
         .reduce((sum, t) => sum + t.valor, 0);
 
       const despesas = monthTransactions
-        .filter(t => t.tipo === 'despesa')
-        .reduce((sum, t) => sum + t.valor, 0);
+        .filter(t => t.valor < 0)
+        .reduce((sum, t) => sum + Math.abs(t.valor), 0);
 
-      const despesasDoMes = monthTransactions.filter(t => t.tipo === 'despesa');
-      const totalDespesas = despesasDoMes.reduce((sum, t) => sum + t.valor, 0);
+      const despesasDoMes = monthTransactions.filter(t => t.valor < 0);
+      const totalDespesas = despesasDoMes.reduce((sum, t) => sum + Math.abs(t.valor), 0);
       
       const categorias = Object.values(
         despesasDoMes.reduce((acc, t) => {
@@ -118,7 +118,7 @@ export function useAnalytics(
               transacoes: [],
             };
           }
-          acc[t.categoria].total += t.valor;
+          acc[t.categoria].total += Math.abs(t.valor);
           acc[t.categoria].quantidade += 1;
           acc[t.categoria].transacoes.push(t);
           return acc;
@@ -159,9 +159,9 @@ export function useAnalytics(
   const insights = useMemo((): AnalyticsInsights | null => {
     if (categorySpending.length === 0 || filteredTransactions.length === 0) return null;
 
-    const despesas = filteredTransactions.filter(t => t.tipo === 'despesa');
+    const despesas = filteredTransactions.filter(t => t.valor < 0);
     const maiorGasto = despesas.reduce((max, t) => 
-      t.valor > max.valor ? t : max
+      Math.abs(t.valor) > Math.abs(max.valor) ? t : max
     , despesas[0]);
 
     const mediaMensal = monthlyComparison.length > 0
