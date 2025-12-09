@@ -1,10 +1,41 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AnalyticsInsights } from '@/types/analytics';
-import { TrendingUp, TrendingDown, Award, CreditCard, PiggyBank } from 'lucide-react';
+import { TrendingUp, TrendingDown, Award, CreditCard, PiggyBank, Info } from 'lucide-react';
 import { useCurrency } from '@/contexts/CurrencyContext';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface InsightCardsProps {
   insights: AnalyticsInsights;
+}
+
+// Textos explicativos para cada métrica
+const insightExplanations = {
+  topCategoria: "Categoria onde você mais gastou no período selecionado. O valor total e a porcentagem em relação a todos os gastos são exibidos abaixo.",
+  maiorGasto: "Maior despesa individual registrada no período. Mostra o valor e a descrição da transação.",
+  mediaMensal: "Média de despesas por mês no período selecionado. Calculado somando todos os gastos e dividindo pelo número de meses.",
+  economiaMensal: "Diferença média entre receitas e despesas por mês. Valores positivos indicam economia, negativos indicam gastos acima da receita.",
+};
+
+function InfoTooltip({ text }: { text: string }) {
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button className="ml-1 text-muted-foreground hover:text-foreground transition-colors">
+            <Info className="h-3.5 w-3.5" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-[250px] text-sm">
+          <p>{text}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 }
 
 export function InsightCards({ insights }: InsightCardsProps) {
@@ -14,7 +45,10 @@ export function InsightCards({ insights }: InsightCardsProps) {
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Top Categoria</CardTitle>
+          <div className="flex items-center">
+            <CardTitle className="text-sm font-medium">Top Categoria</CardTitle>
+            <InfoTooltip text={insightExplanations.topCategoria} />
+          </div>
           <Award className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
@@ -27,7 +61,10 @@ export function InsightCards({ insights }: InsightCardsProps) {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Maior Gasto</CardTitle>
+          <div className="flex items-center">
+            <CardTitle className="text-sm font-medium">Maior Gasto</CardTitle>
+            <InfoTooltip text={insightExplanations.maiorGasto} />
+          </div>
           <CreditCard className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
@@ -40,7 +77,10 @@ export function InsightCards({ insights }: InsightCardsProps) {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Média Mensal</CardTitle>
+          <div className="flex items-center">
+            <CardTitle className="text-sm font-medium">Média Mensal</CardTitle>
+            <InfoTooltip text={insightExplanations.mediaMensal} />
+          </div>
           <TrendingDown className="h-4 w-4 text-destructive" />
         </CardHeader>
         <CardContent>
@@ -53,7 +93,10 @@ export function InsightCards({ insights }: InsightCardsProps) {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Economia Mensal</CardTitle>
+          <div className="flex items-center">
+            <CardTitle className="text-sm font-medium">Economia Mensal</CardTitle>
+            <InfoTooltip text={insightExplanations.economiaMensal} />
+          </div>
           {insights.economiaMensal >= 0 ? (
             <PiggyBank className="h-4 w-4 text-success" />
           ) : (
