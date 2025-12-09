@@ -149,29 +149,34 @@ export default function Analytics({ jid, phoneNumber, onBack }: AnalyticsProps) 
                 <CategoryTrendChart trends={categoryTrends} />
               </div>
 
-              {/* Relatório Detalhado de Transações */}
+              {/* Extrato Detalhado de Transações */}
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                  <CardTitle className="text-xl font-semibold">Relatório Detalhado de Transações</CardTitle>
+                  <div>
+                    <CardTitle className="text-xl font-semibold">Extrato do Período</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {filteredTransactions.length} transaç{filteredTransactions.length === 1 ? 'ão' : 'ões'} encontrada{filteredTransactions.length === 1 ? '' : 's'}
+                    </p>
+                  </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" size="sm">
                         <FileDown className="mr-2 h-4 w-4" />
-                        Exportar
+                        Exportar Excel
                         <ChevronDown className="ml-2 h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => exportToExcel(filteredTransactions, "transacoes-relatorio")}>
+                      <DropdownMenuItem onClick={() => exportToExcel(filteredTransactions, "extrato-transacoes")}>
                         📊 Excel (.xlsx)
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => exportToCSV(filteredTransactions, "transacoes-relatorio")}>
+                      <DropdownMenuItem onClick={() => exportToCSV(filteredTransactions, "extrato-transacoes")}>
                         📄 CSV (.csv)
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-4 pt-0">
                   <TransactionReportTable transactions={filteredTransactions} />
                 </CardContent>
               </Card>
