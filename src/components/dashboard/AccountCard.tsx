@@ -11,7 +11,6 @@ import { Account } from '@/types/dashboard';
 import { cardVariants, hoverScale } from '@/lib/animations';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { getCurrencyTextName } from '@/lib/currency';
-import { removeEmojis } from '@/lib/utils';
 
 interface AccountCardProps {
   account: Account;
@@ -105,20 +104,19 @@ export function AccountCard({ account, onEditAccount }: AccountCardProps) {
     }
 
     const moedaNome = getCurrencyTextName(currency);
-    const nomeLimpo = removeEmojis(account.nome);
     let command = '';
 
     if (editingField === 'saldo') {
       if (newValue !== account.saldo) {
-        command = `alterar saldo da conta ID ${account.id} '${nomeLimpo}' de ${account.saldo} ${moedaNome} para ${newValue} ${moedaNome}`;
+        command = `alterar saldo da conta ID ${account.id} '${account.nome}' de ${account.saldo} ${moedaNome} para ${newValue} ${moedaNome}`;
       }
     } else if (editingField === 'limite') {
       const currentLimite = account.limite || 0;
       if (newValue !== currentLimite) {
         if (account.tipo === 'cartao_credito') {
-          command = `alterar limite do cartão ID ${account.id} '${nomeLimpo}' de ${currentLimite} ${moedaNome} para ${newValue} ${moedaNome}`;
+          command = `alterar limite do cartão ID ${account.id} '${account.nome}' de ${currentLimite} ${moedaNome} para ${newValue} ${moedaNome}`;
         } else {
-          command = `alterar limite da conta ID ${account.id} '${nomeLimpo}' de ${currentLimite} ${moedaNome} para ${newValue} ${moedaNome}`;
+          command = `alterar limite da conta ID ${account.id} '${account.nome}' de ${currentLimite} ${moedaNome} para ${newValue} ${moedaNome}`;
         }
       }
     }
