@@ -11,6 +11,7 @@ import { differenceInDays } from 'date-fns';
 import { cardVariants, hoverScale } from '@/lib/animations';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { getCurrencyTextName } from '@/lib/currency';
+import { removeEmojis } from '@/lib/utils';
 
 interface GoalCardProps {
   goal: Goal;
@@ -81,7 +82,7 @@ export function GoalCard({ goal, onEditGoal }: GoalCardProps) {
 
     if (newValue !== currentValue) {
       const moedaNome = getCurrencyTextName(currency);
-      const command = `alterar meta ID ${goal.id} '${goal.descricao}' - ${fieldLabel} de ${currentValue} ${moedaNome} para ${newValue} ${moedaNome}`;
+      const command = `alterar meta ID ${goal.id} '${removeEmojis(goal.descricao)}' - ${fieldLabel} de ${currentValue} ${moedaNome} para ${newValue} ${moedaNome}`;
       onEditGoal(command);
     }
     

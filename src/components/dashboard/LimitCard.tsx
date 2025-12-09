@@ -10,6 +10,7 @@ import { Budget } from '@/types/dashboard';
 import { cardVariants, hoverScale } from '@/lib/animations';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { getCurrencyTextName } from '@/lib/currency';
+import { removeEmojis } from '@/lib/utils';
 
 interface LimitCardProps {
   budget: Budget;
@@ -43,7 +44,7 @@ export function LimitCard({ budget, onEditLimit }: LimitCardProps) {
     const newValue = parseFloat(editValue);
     if (!isNaN(newValue) && newValue !== budget.limite && onEditLimit) {
       const moedaNome = getCurrencyTextName(currency);
-      const command = `alterar limite da categoria ${budget.categoria} de ${budget.limite} ${moedaNome} para ${newValue} ${moedaNome}`;
+      const command = `alterar limite da categoria ${removeEmojis(budget.categoria)} de ${budget.limite} ${moedaNome} para ${newValue} ${moedaNome}`;
       onEditLimit(command);
     }
     setIsEditing(false);
