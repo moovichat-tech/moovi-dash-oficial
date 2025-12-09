@@ -1,19 +1,29 @@
-import { CreditCard, Wallet, PiggyBank, TrendingUp, AlertTriangle, Calendar } from 'lucide-react';
+import { useState } from 'react';
+import { CreditCard, Wallet, PiggyBank, TrendingUp, AlertTriangle, Calendar, Pencil, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Account } from '@/types/dashboard';
 import { cardVariants, hoverScale } from '@/lib/animations';
 import { useCurrency } from '@/contexts/CurrencyContext';
+import { getCurrencyTextName } from '@/lib/currency';
 
 interface AccountCardProps {
   account: Account;
+  onEditAccount?: (command: string) => void;
 }
 
-export function AccountCard({ account }: AccountCardProps) {
-  const { formatCurrency } = useCurrency();
+type EditField = 'saldo' | 'limite' | null;
+
+export function AccountCard({ account, onEditAccount }: AccountCardProps) {
+  const { formatCurrency, currency } = useCurrency();
+  const [editingField, setEditingField] = useState<EditField>(null);
+  const [editValue, setEditValue] = useState('');
+
   const usagePercent = account.limite ? (Math.abs(account.saldo) / account.limite) * 100 : 0;
 
   const statusColor =
@@ -73,6 +83,103 @@ export function AccountCard({ account }: AccountCardProps) {
     return 'text-muted-foreground';
   };
 
+  const handleStartEdit = (field: EditField) => {
+    if (!field) return;
+    let currentValue = 0;
+    if (field === 'saldo') currentValue = account.saldo;
+    else if (field === 'limite') currentValue = account.limite || 0;
+    
+    setEditValue(currentValue.toString());
+    setEditingField(field);
+  };
+
+  const handleConfirmEdit = () => {
+    if (!editingField || !onEditAccount) return;
+    
+    const newValue = parseFloat(editValue);
+    if (isNaN(newValue)) {
+      setEditingField(null);
+      setEditValue('');
+      return;
+    }
+
+    const moedaNome = getCurrencyTextName(currency);
+    let command = '';
+
+    if (editingField === 'saldo') {
+      if (newValue !== account.saldo) {
+        command = `alterar saldo da conta ID ${account.id} '${account.nome}' de ${account.saldo} ${moedaNome} para ${newValue} ${moedaNome}`;
+      }
+    } else if (editingField === 'limite') {
+      const currentLimite = account.limite || 0;
+      if (newValue !== currentLimite) {
+        if (account.tipo === 'cartao_credito') {
+          command = `alterar limite do cartão ID ${account.id} '${account.nome}' de ${currentLimite} ${moedaNome} para ${newValue} ${moedaNome}`;
+        } else {
+          command = `alterar limite da conta ID ${account.id} '${account.nome}' de ${currentLimite} ${moedaNome} para ${newValue} ${moedaNome}`;
+        }
+      }
+    }
+
+    if (command) {
+      onEditAccount(command);
+    }
+    
+    setEditingField(null);
+    setEditValue('');
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleConfirmEdit();
+    } else if (e.key === 'Escape') {
+      setEditingField(null);
+      setEditValue('');
+    }
+  };
+
+  const renderEditableValue = (field: EditField, value: number) => {
+    if (editingField === field) {
+      return (
+        <span className="inline-flex items-center gap-1">
+          <Input
+            type="number"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onBlur={handleConfirmEdit}
+            className="h-6 w-24 text-sm px-1"
+            autoFocus
+          />
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-6 w-6"
+            onClick={handleConfirmEdit}
+          >
+            <Check className="h-3.5 w-3.5 text-success" />
+          </Button>
+        </span>
+      );
+    }
+    
+    return (
+      <span className="inline-flex items-center gap-1">
+        {formatCurrency(value)}
+        {onEditAccount && (
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-5 w-5 p-0 hover:bg-transparent"
+            onClick={() => handleStartEdit(field)}
+          >
+            <Pencil className="h-3.5 w-3.5 text-muted-foreground hover:text-primary" />
+          </Button>
+        )}
+      </span>
+    );
+  };
+
   return (
     <motion.div
       variants={cardVariants}
@@ -114,7 +221,7 @@ export function AccountCard({ account }: AccountCardProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <p className="text-2xl font-bold">{formatCurrency(account.saldo)}</p>
+          <p className="text-2xl font-bold">{renderEditableValue('saldo', account.saldo)}</p>
           <p className="text-xs text-muted-foreground">Saldo atual</p>
         </motion.div>
 
@@ -132,6 +239,11 @@ export function AccountCard({ account }: AccountCardProps) {
                 <span className={`font-semibold ${statusColor}`}>
                   {formatCurrency(account.limite - Math.abs(account.saldo))}
                 </span>
+              </div>
+
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Limite total</span>
+                {renderEditableValue('limite', account.limite)}
               </div>
 
               <Progress value={Math.min(usagePercent, 100)} className="h-2" />
