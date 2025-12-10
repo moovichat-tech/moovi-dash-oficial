@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { tapScale } from '@/lib/animations';
+import { useCommandFeedback } from '@/hooks/useCommandFeedback';
 
 interface NewGoalModalProps {
   open: boolean;
@@ -23,6 +24,7 @@ interface NewGoalModalProps {
 export function NewGoalModal({ open, onClose, onSendCommand }: NewGoalModalProps) {
   const [command, setCommand] = useState('');
   const [loading, setLoading] = useState(false);
+  const { showFeedback } = useCommandFeedback();
 
   const suggestions = [
     'criar meta de R$5000 para viagem em 6 meses',
@@ -34,10 +36,7 @@ export function NewGoalModal({ open, onClose, onSendCommand }: NewGoalModalProps
     if (!command.trim()) return;
 
     // Fire-and-forget: fecha imediatamente
-    toast({
-      title: 'Criando meta... 🎯',
-      description: 'Sua meta está sendo processada.',
-    });
+    showFeedback('create', '🎯 Criando meta...');
     onClose();
     setCommand('');
 

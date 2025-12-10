@@ -11,6 +11,7 @@ import { cardVariants, hoverScale } from '@/lib/animations';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { getCurrencyTextName } from '@/lib/currency';
 import { removeEmojis } from '@/lib/utils';
+import { useCommandFeedback } from '@/hooks/useCommandFeedback';
 
 interface LimitCardProps {
   budget: Budget;
@@ -19,6 +20,7 @@ interface LimitCardProps {
 
 export function LimitCard({ budget, onEditLimit }: LimitCardProps) {
   const { formatCurrency, currency } = useCurrency();
+  const { showFeedback } = useCommandFeedback();
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState('');
 
@@ -45,6 +47,7 @@ export function LimitCard({ budget, onEditLimit }: LimitCardProps) {
     if (!isNaN(newValue) && newValue !== budget.limite && onEditLimit) {
       const moedaNome = getCurrencyTextName(currency);
       const command = `alterar limite da categoria ${removeEmojis(budget.categoria)} de ${budget.limite} ${moedaNome} para ${newValue} ${moedaNome}`;
+      showFeedback('edit', '✏️ Editando limite...');
       onEditLimit(command);
     }
     setIsEditing(false);

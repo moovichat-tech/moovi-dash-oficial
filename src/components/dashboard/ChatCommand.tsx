@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Send, Sparkles } from 'lucide-react';
+import { useCommandFeedback } from '@/hooks/useCommandFeedback';
 
 interface ChatCommandProps {
   onSendCommand: (command: string) => void;
@@ -11,6 +12,7 @@ interface ChatCommandProps {
 
 export function ChatCommand({ onSendCommand, disabled }: ChatCommandProps) {
   const [command, setCommand] = useState('');
+  const { showFeedback } = useCommandFeedback();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,6 +20,7 @@ export function ChatCommand({ onSendCommand, disabled }: ChatCommandProps) {
 
     const commandToSend = command;
     setCommand(''); // Limpa imediatamente
+    showFeedback('command', '🚀 Comando enviado!');
     onSendCommand(commandToSend); // Fire-and-forget
   };
 
