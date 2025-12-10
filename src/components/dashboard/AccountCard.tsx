@@ -12,6 +12,7 @@ import { cardVariants, hoverScale } from '@/lib/animations';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { getCurrencyTextName } from '@/lib/currency';
 import { removeEmojis } from '@/lib/utils';
+import { useCommandFeedback } from '@/hooks/useCommandFeedback';
 
 interface AccountCardProps {
   account: Account;
@@ -22,6 +23,7 @@ type EditField = 'saldo' | 'limite' | null;
 
 export function AccountCard({ account, onEditAccount }: AccountCardProps) {
   const { formatCurrency, currency } = useCurrency();
+  const { showFeedback } = useCommandFeedback();
   const [editingField, setEditingField] = useState<EditField>(null);
   const [editValue, setEditValue] = useState('');
 
@@ -123,6 +125,8 @@ export function AccountCard({ account, onEditAccount }: AccountCardProps) {
     }
 
     if (command) {
+      const label = editingField === 'limite' ? 'limite' : 'saldo';
+      showFeedback('edit', `✏️ Editando ${label}...`);
       onEditAccount(command);
     }
     

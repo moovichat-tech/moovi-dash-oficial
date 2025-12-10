@@ -12,6 +12,7 @@ import { cardVariants, hoverScale } from '@/lib/animations';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { getCurrencyTextName } from '@/lib/currency';
 import { removeEmojis } from '@/lib/utils';
+import { useCommandFeedback } from '@/hooks/useCommandFeedback';
 
 interface GoalCardProps {
   goal: Goal;
@@ -22,6 +23,7 @@ type EditField = 'valor_guardado' | 'valor_total' | 'valor_mensal' | null;
 
 export function GoalCard({ goal, onEditGoal }: GoalCardProps) {
   const { formatCurrency, currency } = useCurrency();
+  const { showFeedback } = useCommandFeedback();
   const [editingField, setEditingField] = useState<EditField>(null);
   const [editValue, setEditValue] = useState('');
 
@@ -83,6 +85,7 @@ export function GoalCard({ goal, onEditGoal }: GoalCardProps) {
     if (newValue !== currentValue) {
       const moedaNome = getCurrencyTextName(currency);
       const command = `alterar meta ID ${goal.id} '${removeEmojis(goal.descricao)}' - ${fieldLabel} de ${currentValue} ${moedaNome} para ${newValue} ${moedaNome}`;
+      showFeedback('edit', '✏️ Editando meta...');
       onEditGoal(command);
     }
     

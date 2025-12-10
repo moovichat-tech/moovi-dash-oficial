@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { tapScale } from '@/lib/animations';
+import { useCommandFeedback } from '@/hooks/useCommandFeedback';
 
 interface NewAccountModalProps {
   open: boolean;
@@ -23,6 +24,7 @@ interface NewAccountModalProps {
 export function NewAccountModal({ open, onClose, onSendCommand }: NewAccountModalProps) {
   const [command, setCommand] = useState('');
   const [loading, setLoading] = useState(false);
+  const { showFeedback } = useCommandFeedback();
 
   const suggestions = [
     'adicionar conta corrente Nubank com saldo R$1500',
@@ -34,10 +36,7 @@ export function NewAccountModal({ open, onClose, onSendCommand }: NewAccountModa
     if (!command.trim()) return;
 
     // Fire-and-forget: fecha imediatamente
-    toast({
-      title: 'Adicionando conta... 💳',
-      description: 'Sua conta está sendo processada.',
-    });
+    showFeedback('create', '💳 Adicionando conta...');
     onClose();
     setCommand('');
 

@@ -27,6 +27,7 @@ import { TransactionFilterBadges } from './TransactionFilterBadges';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useCurrency } from '@/contexts/CurrencyContext';
 import { useToast } from '@/hooks/use-toast';
+import { useCommandFeedback } from '@/hooks/useCommandFeedback';
 
 interface TransactionsListProps {
   transactions: Transaction[];
@@ -58,6 +59,7 @@ const getCurrencyTextName = (code: string): string => {
 export function TransactionsList({ transactions, onEditTransaction }: TransactionsListProps) {
   const { formatCurrency, currency } = useCurrency();
   const { toast } = useToast();
+  const { showFeedback } = useCommandFeedback();
   const isMobile = useIsMobile();
   const [filterState, setFilterState] = useState<TransactionFilterState>({
     search: '',
@@ -247,6 +249,7 @@ export function TransactionsList({ transactions, onEditTransaction }: Transactio
     }
     
     const command = generateEditCommand(transaction, newValue);
+    showFeedback('edit', '✏️ Editando transação...');
     onEditTransaction?.(command);
     setEditingId(null);
     setEditValue('');
