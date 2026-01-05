@@ -35,7 +35,7 @@ export function MonthlyComparison({ data }: MonthlyComparisonProps) {
         </div>
       </CardHeader>
       <CardContent>
-        <div ref={chartRef} className="h-[400px]">
+        <div ref={chartRef} className="h-[440px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
