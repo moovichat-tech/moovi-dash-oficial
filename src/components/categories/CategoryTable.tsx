@@ -14,19 +14,19 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useCurrency } from '@/contexts/CurrencyContext';
-import type { Category, Transaction } from '@/types/dashboard';
+import type { Transaction } from '@/types/dashboard';
 
 type SortDirection = 'asc' | 'desc' | null;
 type SortField = 'nome' | 'valor';
 
 interface CategoryTableProps {
-  categories: Category[];
+  categoryNames: string[];
   transactions: Transaction[];
   tipo: 'receita' | 'despesa';
   onDelete: (categoryName: string) => void;
 }
 
-export function CategoryTable({ categories, transactions, tipo, onDelete }: CategoryTableProps) {
+export function CategoryTable({ categoryNames, transactions, tipo, onDelete }: CategoryTableProps) {
   const { formatCurrency } = useCurrency();
   const [sortField, setSortField] = useState<SortField>('valor');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -38,21 +38,18 @@ export function CategoryTable({ categories, transactions, tipo, onDelete }: Cate
       .reduce((sum, t) => sum + Math.abs(t.valor), 0);
   };
 
-  // Filtrar categorias pelo tipo
-  const filteredCategories = categories.filter(c => c.tipo === tipo);
-
   // Ordenar categorias
-  const sortedCategories = [...filteredCategories].sort((a, b) => {
+  const sortedCategories = [...categoryNames].sort((a, b) => {
     if (!sortField || !sortDirection) return 0;
 
     if (sortField === 'nome') {
-      const comparison = a.nome.localeCompare(b.nome, 'pt-BR');
+      const comparison = a.localeCompare(b, 'pt-BR');
       return sortDirection === 'asc' ? comparison : -comparison;
     }
 
     if (sortField === 'valor') {
-      const valueA = getCategoryValue(a.nome);
-      const valueB = getCategoryValue(b.nome);
+      const valueA = getCategoryValue(a);
+      const valueB = getCategoryValue(b);
       return sortDirection === 'asc' ? valueA - valueB : valueB - valueA;
     }
 
@@ -86,7 +83,7 @@ export function CategoryTable({ categories, transactions, tipo, onDelete }: Cate
       : <ChevronDown className="h-4 w-4" />;
   };
 
-  if (filteredCategories.length === 0) {
+  if (categoryNames.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
         Nenhuma categoria de {tipo === 'despesa' ? 'gasto' : 'receita'} cadastrada
@@ -121,20 +118,12 @@ export function CategoryTable({ categories, transactions, tipo, onDelete }: Cate
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sortedCategories.map((category) => {
-            const value = getCategoryValue(category.nome);
+          {sortedCategories.map((categoryName) => {
+            const value = getCategoryValue(categoryName);
             return (
-              <TableRow key={category.id}>
+              <TableRow key={categoryName}>
                 <TableCell className="font-medium">
-                  <div className="flex items-center gap-2">
-                    {category.cor && (
-                      <span 
-                        className="w-3 h-3 rounded-full flex-shrink-0" 
-                        style={{ backgroundColor: category.cor }}
-                      />
-                    )}
-                    {category.nome}
-                  </div>
+                  {categoryName}
                 </TableCell>
                 <TableCell className={`text-right font-mono ${tipo === 'despesa' ? 'text-destructive' : 'text-emerald-600 dark:text-emerald-400'}`}>
                   {tipo === 'despesa' ? '-' : '+'}{formatCurrency(value)}
@@ -150,14 +139,14 @@ export function CategoryTable({ categories, transactions, tipo, onDelete }: Cate
                       <AlertDialogHeader>
                         <AlertDialogTitle>Excluir categoria?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Tem certeza que deseja excluir a categoria "{category.nome}"? 
+                          Tem certeza que deseja excluir a categoria "{categoryName}"? 
                           As transações associadas não serão excluídas.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
                         <AlertDialogAction 
-                          onClick={() => onDelete(category.nome)}
+                          onClick={() => onDelete(categoryName)}
                           className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
                           Excluir

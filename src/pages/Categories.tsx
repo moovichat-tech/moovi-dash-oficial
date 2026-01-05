@@ -50,7 +50,9 @@ export default function Categories({ jid, phoneNumber, onBack }: CategoriesProps
     );
   }
 
-  const categories = data?.categorias || [];
+  // Usar as categorias do formato correto da API
+  const categoriasDeGastos = data?.categorias_de_gastos || [];
+  const categoriasDeGanhos = data?.categorias_de_ganhos || [];
   const transactions = data?.todas_transacoes || data?.transacoes || [];
 
   return (
@@ -97,7 +99,7 @@ export default function Categories({ jid, phoneNumber, onBack }: CategoriesProps
               </CardHeader>
               <CardContent>
                 <CategoryTable
-                  categories={categories}
+                  categoryNames={categoriasDeGastos}
                   transactions={transactions}
                   tipo="despesa"
                   onDelete={handleDeleteCategory}
@@ -115,7 +117,7 @@ export default function Categories({ jid, phoneNumber, onBack }: CategoriesProps
               </CardHeader>
               <CardContent>
                 <CategoryTable
-                  categories={categories}
+                  categoryNames={categoriasDeGanhos}
                   transactions={transactions}
                   tipo="receita"
                   onDelete={handleDeleteCategory}

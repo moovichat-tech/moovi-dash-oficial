@@ -71,6 +71,8 @@ export interface DashboardData {
   todas_transacoes?: Transaction[]; // Histórico completo para Analytics
   contas_cartoes: Account[];
   categorias: Category[];
+  categorias_de_gastos?: string[]; // Array de nomes de categorias de gasto
+  categorias_de_ganhos?: string[]; // Array de nomes de categorias de receita
   metas: Goal[];
   recorrencias: RecurringTransaction[];
   limites: Budget[];
