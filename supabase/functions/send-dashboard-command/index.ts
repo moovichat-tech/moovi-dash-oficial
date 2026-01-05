@@ -13,11 +13,11 @@ const RATE_LIMIT = {
   windowMs: 60 * 1000, // 1 minute
 };
 
-// Input validation schema
+// Input validation schema - allow most printable characters except control chars
 const commandSchema = z.string()
   .min(1, 'Comando não pode estar vazio')
   .max(500, 'Comando muito longo')
-  .regex(/^[a-zA-Z0-9\s\$\.,!?áéíóúâêôãõçÁÉÍÓÚÂÊÔÃÕÇàèìòùÀÈÌÒÙüÜñÑ#\-:()'\/&@%"+_=*\[\]]+$/, 'Comando contém caracteres inválidos');
+  .regex(/^[\p{L}\p{N}\p{P}\p{S}\p{Zs}]+$/u, 'Comando contém caracteres inválidos');
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
