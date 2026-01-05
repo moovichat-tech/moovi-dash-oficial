@@ -65,13 +65,33 @@ export function useDashboard(jid: string | null, phoneNumber: string | null) {
 
       try {
         // 🚀 Enviar comando (retorna rápido)
-        await postDashboardCommand(phoneNumber, command);
+        const response = await postDashboardCommand(phoneNumber, command);
         
         // ✅ Toast de sucesso IMEDIATO
         toast({
           title: 'Comando enviado ✅',
           description: 'Estamos processando sua solicitação. O dashboard será atualizado em breve.',
         });
+
+        // 📦 Tentar extrair categorias da resposta do comando
+        if (response?.cleanJson) {
+          try {
+            const cleanData = typeof response.cleanJson === 'string' 
+              ? JSON.parse(response.cleanJson) 
+              : response.cleanJson;
+            
+            // Atualizar categorias locais se vieram na resposta
+            if (cleanData.categorias_de_gastos || cleanData.categorias_de_ganhos) {
+              setData(prev => prev ? {
+                ...prev,
+                categorias_de_gastos: cleanData.categorias_de_gastos || prev.categorias_de_gastos,
+                categorias_de_ganhos: cleanData.categorias_de_ganhos || prev.categorias_de_ganhos,
+              } : prev);
+            }
+          } catch (parseErr) {
+            console.warn('Erro ao parsear cleanJson:', parseErr);
+          }
+        }
 
         // 🔄 Processar em BACKGROUND (não bloqueia)
         setTimeout(async () => {

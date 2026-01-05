@@ -87,6 +87,7 @@ export interface DashboardData {
 export interface CommandResponse {
   success: boolean;
   message?: string;
+  cleanJson?: string | Record<string, unknown>;
 }
 
 export interface User {
