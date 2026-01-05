@@ -1,4 +1,4 @@
-import { Moon, Sun, LogOut, RefreshCw, BarChart3, Menu } from "lucide-react";
+import { Moon, Sun, LogOut, RefreshCw, BarChart3, Menu, Tags } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useTheme } from "@/hooks/useTheme";
@@ -19,9 +19,10 @@ interface DashboardProps {
   phoneNumber: string;
   onLogout: () => void;
   onNavigateToAnalytics?: () => void;
+  onNavigateToCategories?: () => void;
 }
 
-export default function Dashboard({ jid, phoneNumber, onLogout, onNavigateToAnalytics }: DashboardProps) {
+export default function Dashboard({ jid, phoneNumber, onLogout, onNavigateToAnalytics, onNavigateToCategories }: DashboardProps) {
   const { theme, toggleTheme } = useTheme();
   const { data, loading, isNotFound, refresh, sendCommand } = useDashboard(jid, phoneNumber);
 
@@ -74,6 +75,12 @@ export default function Dashboard({ jid, phoneNumber, onLogout, onNavigateToAnal
                       Analytics
                     </Button>
                   )}
+                  {onNavigateToCategories && (
+                    <Button variant="outline" onClick={onNavigateToCategories} className="justify-start">
+                      <Tags className="h-4 w-4 mr-2" />
+                      Categorias
+                    </Button>
+                  )}
                   <Button variant="outline" onClick={toggleTheme} className="justify-start">
                     {theme === "light" ? (
                       <>
@@ -100,6 +107,13 @@ export default function Dashboard({ jid, phoneNumber, onLogout, onNavigateToAnal
               <Button variant="outline" size="sm" onClick={onNavigateToAnalytics} className="hidden md:flex">
                 <BarChart3 className="h-4 w-4 md:mr-2" />
                 <span className="hidden lg:inline">Análise</span>
+              </Button>
+            )}
+
+            {onNavigateToCategories && (
+              <Button variant="outline" size="sm" onClick={onNavigateToCategories} className="hidden md:flex">
+                <Tags className="h-4 w-4 md:mr-2" />
+                <span className="hidden lg:inline">Categorias</span>
               </Button>
             )}
 
