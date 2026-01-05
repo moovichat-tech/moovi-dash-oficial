@@ -219,9 +219,13 @@ export function useExportTransactions() {
       .filter(t => t.valor < 0)
       .reduce((sum, t) => sum + Math.abs(t.valor), 0);
 
-    // Preparar dados
-    const mesNome = format(periodo.from, 'MMMM', { locale: ptBR });
-    const ano = format(periodo.from, 'yyyy');
+    // Preparar dados do período
+    const fromDate = format(periodo.from, "MMMM 'de' yyyy", { locale: ptBR });
+    const toDate = format(periodo.to, "MMMM 'de' yyyy", { locale: ptBR });
+    const isSameMonth = format(periodo.from, 'yyyy-MM') === format(periodo.to, 'yyyy-MM');
+    const periodoTexto = isSameMonth 
+      ? fromDate.charAt(0).toUpperCase() + fromDate.slice(1)
+      : `${fromDate.charAt(0).toUpperCase() + fromDate.slice(1)} - ${toDate.charAt(0).toUpperCase() + toDate.slice(1)}`;
     
     // Agrupar receitas
     const receitasAgrupadas = transactions
@@ -256,13 +260,13 @@ export function useExportTransactions() {
     ]);
     currentRow++;
 
-    // === LINHA 2: MÊS E ANO ===
+    // === LINHA 2: PERÍODO ===
     sheetData.push([
-      { v: 'Mês:', s: styles.label },
-      { v: mesNome.charAt(0).toUpperCase() + mesNome.slice(1), s: { alignment: { horizontal: 'left' } } },
+      { v: 'Período:', s: styles.label },
+      { v: periodoTexto, s: { alignment: { horizontal: 'left' } } },
       { v: '', s: {} },
-      { v: 'Ano:', s: styles.label },
-      { v: ano, s: { alignment: { horizontal: 'left' } } },
+      { v: '', s: {} },
+      { v: '', s: {} },
       { v: '', s: {} },
       { v: '', s: {} },
     ]);
