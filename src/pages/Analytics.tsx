@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, FileDown, ChevronDown } from "lucide-react";
+import { ArrowLeft, FileDown, ChevronDown, RefreshCw } from "lucide-react";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useAnalytics } from "@/hooks/useAnalytics";
 import { useChartExport } from "@/hooks/useChartExport";
@@ -30,7 +30,8 @@ interface AnalyticsProps {
 }
 
 export default function Analytics({ jid, phoneNumber, onBack }: AnalyticsProps) {
-  const { data, loading } = useDashboard(jid, phoneNumber);
+  const { data, loading, refresh } = useDashboard(jid, phoneNumber);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { exportMultipleToPDF } = useChartExport();
   const { exportToExcel, exportToCSV, exportFullReport } = useExportTransactions();
 
@@ -53,6 +54,16 @@ export default function Analytics({ jid, phoneNumber, onBack }: AnalyticsProps) 
   const barChartRef = useRef<HTMLDivElement>(null);
   const lineChartRef = useRef<HTMLDivElement>(null);
   const insightsRef = useRef<HTMLDivElement>(null);
+
+  // Função para atualizar dados
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refresh();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // Função para exportar todos os gráficos
   const handleExportAll = () => {
@@ -136,10 +147,33 @@ export default function Analytics({ jid, phoneNumber, onBack }: AnalyticsProps) 
               </div>
             </div>
             {insights && (
-              <Button onClick={handleExportAll} variant="default">
-                <FileDown className="mr-2 h-4 w-4" />
-                Exportar Tudo (PDF)
-              </Button>
+              <div className="flex items-center gap-2">
+                {/* Mobile: botão de refresh com ícone */}
+                <Button
+                  onClick={handleRefresh}
+                  variant="outline"
+                  size="icon"
+                  className="md:hidden"
+                  disabled={isRefreshing}
+                >
+                  <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                </Button>
+                {/* Desktop: botão com texto */}
+                <Button
+                  onClick={handleRefresh}
+                  variant="outline"
+                  className="hidden md:flex"
+                  disabled={isRefreshing}
+                >
+                  <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  {isRefreshing ? 'Atualizando...' : 'Atualizar'}
+                </Button>
+                <Button onClick={handleExportAll} variant="default">
+                  <FileDown className="mr-2 h-4 w-4" />
+                  <span className="hidden sm:inline">Exportar Tudo (PDF)</span>
+                  <span className="sm:hidden">PDF</span>
+                </Button>
+              </div>
             )}
           </div>
 
