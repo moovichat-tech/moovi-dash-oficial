@@ -134,13 +134,21 @@ export function CategoryTable({ categoryNames, transactions, tipo, onDelete }: C
         <TableBody>
           {sortedCategories.map((categoryName) => {
             const value = getCategoryValue(categoryName);
+            const hasNoTransactions = value === 0;
             return (
-              <TableRow key={categoryName}>
+              <TableRow key={categoryName} className={hasNoTransactions ? 'opacity-60' : ''}>
                 <TableCell className="font-medium">
-                  {categoryName}
+                  <div className="flex items-center gap-2">
+                    {categoryName}
+                    {hasNoTransactions && (
+                      <span className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground">
+                        Sem transações
+                      </span>
+                    )}
+                  </div>
                 </TableCell>
-                <TableCell className={`text-right font-mono ${tipo === 'despesa' ? 'text-destructive' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                  {tipo === 'despesa' ? '-' : '+'}{formatCurrency(value)}
+                <TableCell className={`text-right font-mono ${hasNoTransactions ? 'text-muted-foreground' : tipo === 'despesa' ? 'text-destructive' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                  {hasNoTransactions ? '—' : `${tipo === 'despesa' ? '-' : '+'}${formatCurrency(value)}`}
                 </TableCell>
                 <TableCell className="text-center">
                   <AlertDialog>
