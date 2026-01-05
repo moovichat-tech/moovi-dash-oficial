@@ -23,19 +23,17 @@ export default function Categories({ jid, phoneNumber, onBack }: CategoriesProps
   const [loadingCategories, setLoadingCategories] = useState(false);
   const { showFeedback } = useCommandFeedback();
 
-  // Buscar categorias via comando se não vieram da API
+  // Buscar categorias via comando se não vieram completas da API
   useEffect(() => {
     const fetchCategoriesIfNeeded = async () => {
       if (data && !loadingCategories) {
-        const hasGastos = data.categorias_de_gastos && data.categorias_de_gastos.length > 0;
-        const hasGanhos = data.categorias_de_ganhos && data.categorias_de_ganhos.length > 0;
-        
-        // Se não temos categorias completas e temos apenas as extraídas das transações,
-        // tentar buscar via comando
-        if (!hasGastos && !hasGanhos) {
+        const hasGastos = Array.isArray(data.categorias_de_gastos) && data.categorias_de_gastos.length > 0;
+        const hasGanhos = Array.isArray(data.categorias_de_ganhos) && data.categorias_de_ganhos.length > 0;
+
+        // Se qualquer uma das listas estiver vazia, buscar via comando (retorna cleanJson com categorias completas)
+        if (!hasGastos || !hasGanhos) {
           setLoadingCategories(true);
           try {
-            // Comando para listar categorias (que retorna cleanJson com categorias completas)
             await sendCommand('Listar minhas categorias');
           } catch (err) {
             console.error('Erro ao buscar categorias:', err);
