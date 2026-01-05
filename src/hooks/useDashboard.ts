@@ -57,13 +57,6 @@ export function useDashboard(jid: string | null, phoneNumber: string | null) {
 
   useEffect(() => {
     loadDashboard();
-    
-    // Auto-refresh a cada 15 segundos
-    const intervalId = setInterval(() => {
-      loadDashboard();
-    }, 15000);
-
-    return () => clearInterval(intervalId);
   }, [loadDashboard]);
 
   const sendCommand = useCallback(
