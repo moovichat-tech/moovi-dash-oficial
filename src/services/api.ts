@@ -428,14 +428,11 @@ export async function postDashboardCommand(
   }
 
   // Input validation with zod schema
+  // Permitir caracteres Unicode (incluindo emojis) - a validação real é feita no backend
   const commandSchema = z.string()
     .trim()
     .min(1, 'Comando não pode estar vazio')
-    .max(500, 'Comando muito longo. Máximo de 500 caracteres.')
-    .regex(
-      /^[a-zA-Z0-9\s\$\.,!?áéíóúâêôãõçÁÉÍÓÚÂÊÔÃÕÇàèìòùÀÈÌÒÙüÜñÑ#\-:()'\/&@%"+_=*\[\]]+$/,
-      'Comando contém caracteres inválidos. Use apenas letras, números e pontuação básica.'
-    );
+    .max(500, 'Comando muito longo. Máximo de 500 caracteres.');
 
   let trimmedCommand: string;
   try {
