@@ -160,6 +160,7 @@ export function AccountCard({ account, onEditAccount }: AccountCardProps) {
             size="icon"
             variant="ghost"
             className="h-6 w-6"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={handleConfirmEdit}
           >
             <Check className="h-3.5 w-3.5 text-success" />

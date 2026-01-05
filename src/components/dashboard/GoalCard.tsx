@@ -119,6 +119,7 @@ export function GoalCard({ goal, onEditGoal }: GoalCardProps) {
             size="icon"
             variant="ghost"
             className="h-5 w-5"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={handleConfirmEdit}
           >
             <Check className="h-3 w-3 text-success" />
