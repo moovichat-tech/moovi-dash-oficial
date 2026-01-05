@@ -31,10 +31,16 @@ export function CategoryTable({ categoryNames, transactions, tipo, onDelete }: C
   const [sortField, setSortField] = useState<SortField>('valor');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
+  const getTransactionTipo = (t: Transaction): 'receita' | 'despesa' => {
+    // Alguns endpoints não retornam `tipo`; inferir pelo sinal do valor
+    if ((t as any).tipo === 'receita' || (t as any).tipo === 'despesa') return (t as any).tipo;
+    return t.valor >= 0 ? 'receita' : 'despesa';
+  };
+
   // Calcular valor total por categoria
   const getCategoryValue = (categoryName: string) => {
     return transactions
-      .filter(t => t.categoria === categoryName && t.tipo === tipo)
+      .filter(t => t.categoria === categoryName && getTransactionTipo(t) === tipo)
       .reduce((sum, t) => sum + Math.abs(t.valor), 0);
   };
 
