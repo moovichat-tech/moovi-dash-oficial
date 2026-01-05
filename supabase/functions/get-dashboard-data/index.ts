@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.80.0";
 import { checkRateLimit, getClientIP } from "../_shared/rateLimit.ts";
 import { z } from "https://esm.sh/zod@3.22.4";
 
@@ -31,25 +31,28 @@ Deno.serve(async (req) => {
       throw new Error("Missing authorization header");
     }
 
-    // Extract token from "Bearer <token>"
-    const token = authHeader.replace('Bearer ', '');
+    // Extract token from "Bearer <token>" (robusto para maiúsc/minúsc e espaços)
+    const token = authHeader.replace(/^Bearer\s+/i, "").trim();
 
-    // Create supabase client with the user's token in global headers
+    console.info(`[SECURITY] Auth header received (len=${authHeader.length}), token len=${token.length}`);
+
+    // Create supabase client (stateless) and pass auth via token
     const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "", 
+      Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? "",
       {
+        auth: { persistSession: false },
         global: {
-          headers: { Authorization: `Bearer ${token}` },
+          headers: { Authorization: authHeader },
         },
-      }
+      },
     );
 
-    // Verify user using the authenticated client
+    // Verify user using the provided JWT (não depende de session)
     const {
       data: { user },
       error: authError,
-    } = await supabaseClient.auth.getUser();
+    } = await supabaseClient.auth.getUser(token);
 
     if (authError || !user) {
       console.error("Auth error:", authError);
