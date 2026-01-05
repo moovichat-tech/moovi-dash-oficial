@@ -34,13 +34,21 @@ export function CategoryTable({ categoryNames, transactions, tipo, onDelete }: C
   const getTransactionTipo = (t: Transaction): 'receita' | 'despesa' => {
     // Alguns endpoints não retornam `tipo`; inferir pelo sinal do valor
     if ((t as any).tipo === 'receita' || (t as any).tipo === 'despesa') return (t as any).tipo;
-    return t.valor >= 0 ? 'receita' : 'despesa';
+    return t.valor > 0 ? 'receita' : 'despesa';
   };
+
+  // Normalizar string para comparação (trim e lowercase)
+  const normalizeCategory = (str: string) => str?.trim().toLowerCase() || '';
 
   // Calcular valor total por categoria
   const getCategoryValue = (categoryName: string) => {
+    const normalizedCategoryName = normalizeCategory(categoryName);
     return transactions
-      .filter(t => t.categoria === categoryName && getTransactionTipo(t) === tipo)
+      .filter(t => {
+        const normalizedTransactionCategory = normalizeCategory(t.categoria);
+        const transactionTipo = getTransactionTipo(t);
+        return normalizedTransactionCategory === normalizedCategoryName && transactionTipo === tipo;
+      })
       .reduce((sum, t) => sum + Math.abs(t.valor), 0);
   };
 
