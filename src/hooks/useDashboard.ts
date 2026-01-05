@@ -80,12 +80,20 @@ export function useDashboard(jid: string | null, phoneNumber: string | null) {
               ? JSON.parse(response.cleanJson) 
               : response.cleanJson;
             
+            // Prioridade: categorias_sistema > campos diretos
+            const categoriasGastos = 
+              cleanData.categorias_sistema?.gastos || 
+              cleanData.categorias_de_gastos;
+            const categoriasGanhos = 
+              cleanData.categorias_sistema?.ganhos || 
+              cleanData.categorias_de_ganhos;
+            
             // Atualizar categorias locais se vieram na resposta
-            if (cleanData.categorias_de_gastos || cleanData.categorias_de_ganhos) {
+            if (categoriasGastos || categoriasGanhos) {
               setData(prev => prev ? {
                 ...prev,
-                categorias_de_gastos: cleanData.categorias_de_gastos || prev.categorias_de_gastos,
-                categorias_de_ganhos: cleanData.categorias_de_ganhos || prev.categorias_de_ganhos,
+                categorias_de_gastos: categoriasGastos || prev.categorias_de_gastos,
+                categorias_de_ganhos: categoriasGanhos || prev.categorias_de_ganhos,
               } : prev);
             }
           } catch (parseErr) {

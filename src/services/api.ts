@@ -268,17 +268,25 @@ function processRawDashboardData(raw: any, jid: string): DashboardData {
     console.log('💱 Configurações do usuário:', configuracoesUsuario);
   }
 
-  // ✅ Categorias (preferir listas explícitas da API; fallback por transações)
-  // Tentar múltiplas variações de nomes de campo
-  const rawCategoriasGastos = (raw as any).categorias_de_gastos 
-    || (raw as any).categorias_de_gasto 
-    || (raw as any).categoriasDeGastos
-    || (raw as any).categoriasDeGasto;
+  // ✅ Categorias (prioridade: categorias_sistema > listas diretas > fallback por transações)
+  const categoriasSistema = (raw as any).categorias_sistema;
   
-  const rawCategoriasGanhos = (raw as any).categorias_de_ganhos 
-    || (raw as any).categorias_de_ganho 
-    || (raw as any).categoriasDeGanhos
-    || (raw as any).categoriasDeGanho;
+  // Prioridade 1: Nova estrutura categorias_sistema.gastos/ganhos
+  // Prioridade 2: Campos diretos (categorias_de_gastos, etc.)
+  // Prioridade 3: Inferir das transações
+  const rawCategoriasGastos = 
+    categoriasSistema?.gastos ||
+    (raw as any).categorias_de_gastos || 
+    (raw as any).categorias_de_gasto || 
+    (raw as any).categoriasDeGastos ||
+    (raw as any).categoriasDeGasto;
+  
+  const rawCategoriasGanhos = 
+    categoriasSistema?.ganhos ||
+    (raw as any).categorias_de_ganhos || 
+    (raw as any).categorias_de_ganho || 
+    (raw as any).categoriasDeGanhos ||
+    (raw as any).categoriasDeGanho;
 
   const categoriasDeGastos = Array.isArray(rawCategoriasGastos)
     ? rawCategoriasGastos
@@ -302,6 +310,7 @@ function processRawDashboardData(raw: any, jid: string): DashboardData {
 
   if (IS_DEV) {
     console.log('📂 Categorias processadas:', {
+      categoriasSistema,
       rawCategoriasGastos,
       rawCategoriasGanhos,
       categoriasDeGastos,
