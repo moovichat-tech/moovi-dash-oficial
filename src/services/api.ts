@@ -269,29 +269,45 @@ function processRawDashboardData(raw: any, jid: string): DashboardData {
   }
 
   // ✅ Categorias (preferir listas explícitas da API; fallback por transações)
-  const categoriasDeGastos = Array.isArray((raw as any).categorias_de_gastos)
-    ? (raw as any).categorias_de_gastos
-    : Array.isArray((raw as any).categorias_de_gasto)
-      ? (raw as any).categorias_de_gasto
-      : Array.from(
-          new Set(
-            todasTransacoes
-              .filter((t: any) => typeof t?.categoria === 'string' && t.valor < 0)
-              .map((t: any) => t.categoria)
-          )
-        );
+  // Tentar múltiplas variações de nomes de campo
+  const rawCategoriasGastos = (raw as any).categorias_de_gastos 
+    || (raw as any).categorias_de_gasto 
+    || (raw as any).categoriasDeGastos
+    || (raw as any).categoriasDeGasto;
+  
+  const rawCategoriasGanhos = (raw as any).categorias_de_ganhos 
+    || (raw as any).categorias_de_ganho 
+    || (raw as any).categoriasDeGanhos
+    || (raw as any).categoriasDeGanho;
 
-  const categoriasDeGanhos = Array.isArray((raw as any).categorias_de_ganhos)
-    ? (raw as any).categorias_de_ganhos
-    : Array.isArray((raw as any).categorias_de_ganho)
-      ? (raw as any).categorias_de_ganho
-      : Array.from(
-          new Set(
-            todasTransacoes
-              .filter((t: any) => typeof t?.categoria === 'string' && t.valor >= 0)
-              .map((t: any) => t.categoria)
-          )
-        );
+  const categoriasDeGastos = Array.isArray(rawCategoriasGastos)
+    ? rawCategoriasGastos
+    : Array.from(
+        new Set(
+          todasTransacoes
+            .filter((t: any) => typeof t?.categoria === 'string' && t.valor < 0)
+            .map((t: any) => t.categoria)
+        )
+      );
+
+  const categoriasDeGanhos = Array.isArray(rawCategoriasGanhos)
+    ? rawCategoriasGanhos
+    : Array.from(
+        new Set(
+          todasTransacoes
+            .filter((t: any) => typeof t?.categoria === 'string' && t.valor >= 0)
+            .map((t: any) => t.categoria)
+        )
+      );
+
+  if (IS_DEV) {
+    console.log('📂 Categorias processadas:', {
+      rawCategoriasGastos,
+      rawCategoriasGanhos,
+      categoriasDeGastos,
+      categoriasDeGanhos,
+    });
+  }
 
   // ✅ Retornar dados processados (usando dados pré-filtrados da API)
   return {

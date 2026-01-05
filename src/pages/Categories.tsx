@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, RefreshCw, Plus, Tags } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,7 +20,34 @@ interface CategoriesProps {
 export default function Categories({ jid, phoneNumber, onBack }: CategoriesProps) {
   const { data, loading, refresh, sendCommand } = useDashboard(jid, phoneNumber);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loadingCategories, setLoadingCategories] = useState(false);
   const { showFeedback } = useCommandFeedback();
+
+  // Buscar categorias via comando se não vieram da API
+  useEffect(() => {
+    const fetchCategoriesIfNeeded = async () => {
+      if (data && !loadingCategories) {
+        const hasGastos = data.categorias_de_gastos && data.categorias_de_gastos.length > 0;
+        const hasGanhos = data.categorias_de_ganhos && data.categorias_de_ganhos.length > 0;
+        
+        // Se não temos categorias completas e temos apenas as extraídas das transações,
+        // tentar buscar via comando
+        if (!hasGastos && !hasGanhos) {
+          setLoadingCategories(true);
+          try {
+            // Comando para listar categorias (que retorna cleanJson com categorias completas)
+            await sendCommand('Listar minhas categorias');
+          } catch (err) {
+            console.error('Erro ao buscar categorias:', err);
+          } finally {
+            setLoadingCategories(false);
+          }
+        }
+      }
+    };
+
+    fetchCategoriesIfNeeded();
+  }, [data?.jid]); // Executar apenas quando os dados do usuário mudarem
 
   const handleDeleteCategory = async (categoryName: string) => {
     showFeedback('command', '🗑️ Excluindo categoria...');
@@ -38,7 +65,7 @@ export default function Categories({ jid, phoneNumber, onBack }: CategoriesProps
     }
   };
 
-  if (loading && !data) {
+  if ((loading || loadingCategories) && !data) {
     return (
       <div className="min-h-screen bg-background p-4">
         <div className="max-w-4xl mx-auto space-y-6">
