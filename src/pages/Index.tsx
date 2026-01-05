@@ -4,10 +4,11 @@ import { PhoneLogin } from '@/components/auth/PhoneLogin';
 import { RegisterPassword } from '@/components/auth/RegisterPassword';
 import Dashboard from './Dashboard';
 import Analytics from './Analytics';
+import Categories from './Categories';
 import { supabase } from '@/integrations/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
-type ViewType = 'dashboard' | 'analytics';
+type ViewType = 'dashboard' | 'analytics' | 'categories';
 type AuthStep = 'login' | 'whatsapp' | 'register-password';
 
 const Index = () => {
@@ -144,12 +145,23 @@ const Index = () => {
     );
   }
 
+  if (currentView === 'categories') {
+    return (
+      <Categories 
+        jid={jid}
+        phoneNumber={phoneNumber}
+        onBack={() => setCurrentView('dashboard')}
+      />
+    );
+  }
+
   return (
     <Dashboard 
       jid={jid}
       phoneNumber={phoneNumber}
       onLogout={handleLogout}
       onNavigateToAnalytics={() => setCurrentView('analytics')}
+      onNavigateToCategories={() => setCurrentView('categories')}
     />
   );
 };
