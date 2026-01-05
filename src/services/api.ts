@@ -109,20 +109,31 @@ export class ApiError extends Error {
 /**
  * Processa dados brutos da API e calcula valores agregados
  */
+/**
+ * Parseia uma data string (YYYY-MM-DD ou ISO) de forma segura sem problemas de timezone
+ * Retorna { year, month, day } em local time
+ */
+function parseDateSafe(dateStr: string): { year: number; month: number; day: number } {
+  // Se for ISO (contém T), extrai apenas a parte da data
+  const datePart = dateStr.split('T')[0];
+  const [year, month, day] = datePart.split('-').map(Number);
+  return { year, month: month - 1, day }; // month é 0-indexed
+}
+
 function processRawDashboardData(raw: any, jid: string): DashboardData {
   // ✅ FONTE ÚNICA: todas_transacoes contém TODAS as transações
   const todasTransacoes: any[] = Array.isArray(raw.todas_transacoes) 
     ? raw.todas_transacoes 
     : [];
   
-  // ✅ Filtrar transações do mês atual para Dashboard
+  // ✅ Filtrar transações do mês atual para Dashboard (sem problemas de timezone)
   const now = new Date();
   const mesAtual = now.getMonth();
   const anoAtual = now.getFullYear();
   
   const transacoesDoPeriodo = todasTransacoes.filter(t => {
-    const dataTransacao = new Date(t.data);
-    return dataTransacao.getMonth() === mesAtual && dataTransacao.getFullYear() === anoAtual;
+    const { year, month } = parseDateSafe(t.data);
+    return month === mesAtual && year === anoAtual;
   });
     
   const limitesRaw = Array.isArray(raw.limites) ? raw.limites : [];
@@ -130,7 +141,7 @@ function processRawDashboardData(raw: any, jid: string): DashboardData {
   // ✅ Usar saldo total da API
   const saldoTotal = raw.saldo_total_geral ?? 0;
 
-  // ✅ Calcular receitas e despesas do período (SEM FILTRO DE DATA)
+  // ✅ Calcular receitas e despesas do período
   const receitaMensal = transacoesDoPeriodo
     .filter(t => t.valor > 0)
     .reduce((acc, t) => acc + t.valor, 0);
@@ -141,7 +152,7 @@ function processRawDashboardData(raw: any, jid: string): DashboardData {
       .reduce((acc, t) => acc + t.valor, 0)
   );
 
-  // ✅ Limites por Categoria (sem filtro de data)
+  // ✅ Limites por Categoria
   const limites = limitesRaw.map((limite: any) => {
     const gastoCategoriaMes = transacoesDoPeriodo
       .filter(t => 
@@ -157,21 +168,32 @@ function processRawDashboardData(raw: any, jid: string): DashboardData {
     };
   });
 
-  // ✅ Histórico do Período (sem filtro de data, agrupado por dia)
+  // ✅ Histórico dos últimos 30 dias (agrupado por dia)
+  const hoje = new Date();
+  hoje.setHours(23, 59, 59, 999);
+  const trintaDiasAtras = new Date(hoje);
+  trintaDiasAtras.setDate(trintaDiasAtras.getDate() - 30);
+  trintaDiasAtras.setHours(0, 0, 0, 0);
+  
   const transacoesPorDia = new Map<string, { receitas: number; despesas: number }>();
   
-  transacoesDoPeriodo.forEach(t => {
+  todasTransacoes.forEach(t => {
     const dataKey = t.data.split('T')[0]; // YYYY-MM-DD
+    const { year, month, day } = parseDateSafe(t.data);
+    const dataTransacao = new Date(year, month, day);
     
-    if (!transacoesPorDia.has(dataKey)) {
-      transacoesPorDia.set(dataKey, { receitas: 0, despesas: 0 });
-    }
-    
-    const dia = transacoesPorDia.get(dataKey)!;
-    if (t.valor > 0) {
-      dia.receitas += t.valor;
-    } else {
-      dia.despesas += Math.abs(t.valor);
+    // Filtrar apenas últimos 30 dias
+    if (dataTransacao >= trintaDiasAtras && dataTransacao <= hoje) {
+      if (!transacoesPorDia.has(dataKey)) {
+        transacoesPorDia.set(dataKey, { receitas: 0, despesas: 0 });
+      }
+      
+      const dia = transacoesPorDia.get(dataKey)!;
+      if (t.valor > 0) {
+        dia.receitas += t.valor;
+      } else {
+        dia.despesas += Math.abs(t.valor);
+      }
     }
   });
 

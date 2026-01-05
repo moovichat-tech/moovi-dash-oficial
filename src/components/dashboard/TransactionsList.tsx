@@ -81,6 +81,13 @@ export function TransactionsList({ transactions, onEditTransaction }: Transactio
     return Array.from(new Set(transactions.map((t) => t.categoria))).sort();
   }, [transactions]);
 
+  // Helper para parsear data sem problemas de timezone
+  const parseDateSafe = (dateStr: string) => {
+    const datePart = dateStr.split('T')[0];
+    const [year, month, day] = datePart.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
+
   // Filtrar transações
   const filteredTransactions = useMemo(() => {
     if (!transactions || transactions.length === 0) return [];
@@ -91,12 +98,13 @@ export function TransactionsList({ transactions, onEditTransaction }: Transactio
           (t.descricao || '').toLowerCase().includes(filterState.search.toLowerCase()) ||
           (t.categoria || '').toLowerCase().includes(filterState.search.toLowerCase());
 
-        // Filtro de data
-        const transactionDate = new Date(t.data);
-        const matchesDateFrom =
-          !filterState.dateFrom || transactionDate >= filterState.dateFrom;
-        const matchesDateTo =
-          !filterState.dateTo || transactionDate <= filterState.dateTo;
+        // Filtro de data (sem problemas de timezone)
+        const transactionDate = parseDateSafe(t.data);
+        const filterFrom = filterState.dateFrom ? new Date(filterState.dateFrom.getFullYear(), filterState.dateFrom.getMonth(), filterState.dateFrom.getDate()) : null;
+        const filterTo = filterState.dateTo ? new Date(filterState.dateTo.getFullYear(), filterState.dateTo.getMonth(), filterState.dateTo.getDate(), 23, 59, 59) : null;
+        
+        const matchesDateFrom = !filterFrom || transactionDate >= filterFrom;
+        const matchesDateTo = !filterTo || transactionDate <= filterTo;
 
         // Filtro de categoria
         const matchesCategory =
@@ -125,8 +133,8 @@ export function TransactionsList({ transactions, onEditTransaction }: Transactio
       })
       .sort((a, b) => {
         // 1. Ordenar por data decrescente (mais recente primeiro)
-        const dateA = new Date(a.data).getTime();
-        const dateB = new Date(b.data).getTime();
+        const dateA = parseDateSafe(a.data).getTime();
+        const dateB = parseDateSafe(b.data).getTime();
         
         if (dateB !== dateA) {
           return dateB - dateA;
@@ -199,7 +207,8 @@ export function TransactionsList({ transactions, onEditTransaction }: Transactio
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR', {
+    const date = parseDateSafe(dateString);
+    return date.toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: 'short',
       year: 'numeric',

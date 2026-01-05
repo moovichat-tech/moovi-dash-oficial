@@ -13,8 +13,15 @@ interface FinancialChartProps {
 export function FinancialChart({ data }: FinancialChartProps) {
   const { formatCurrency } = useCurrency();
   
+  // Parsear data sem problemas de timezone
+  const parseDateSafe = (dateStr: string) => {
+    const datePart = dateStr.split('T')[0];
+    const [year, month, day] = datePart.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
+  
   const chartData = (data || []).map((item) => ({
-    data: new Date(item.data).toLocaleDateString('pt-BR', {
+    data: parseDateSafe(item.data).toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: 'short',
     }),
