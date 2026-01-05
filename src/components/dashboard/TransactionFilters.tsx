@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,6 +29,11 @@ export function TransactionFilters({
   const [isOpen, setIsOpen] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>(filterState.categories);
 
+  // Mantém UI de categorias em sincronia com o estado real (ex.: remover badge / limpar tudo)
+  useEffect(() => {
+    setSelectedCategories(filterState.categories);
+  }, [filterState.categories]);
+
   const handleCategoryToggle = (category: string) => {
     const updated = selectedCategories.includes(category)
       ? selectedCategories.filter((c) => c !== category)
@@ -41,8 +46,8 @@ export function TransactionFilters({
       ...filterState,
       categories: selectedCategories,
     });
+    setIsOpen(false);
   };
-
   const handleClearAll = () => {
     setSelectedCategories([]);
     onFilterChange({

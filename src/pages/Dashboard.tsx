@@ -140,7 +140,12 @@ export default function Dashboard({ jid, phoneNumber, onLogout, onNavigateToAnal
               onSendCommand={sendCommand}
             />
 
-            <TransactionsList transactions={data.transacoes || []} onEditTransaction={sendCommand} />
+            <TransactionsList
+              transactions={(data.todas_transacoes && data.todas_transacoes.length > 0
+                ? data.todas_transacoes
+                : data.transacoes) || []}
+              onEditTransaction={sendCommand}
+            />
           </CurrencyProvider>
         )}
       </main>

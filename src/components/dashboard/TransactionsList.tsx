@@ -75,12 +75,17 @@ export function TransactionsList({ transactions, onEditTransaction }: Transactio
   const [editValue, setEditValue] = useState<string>('');
   const itemsPerPage = 10;
 
-  // Extrair categorias únicas
+  // Extrair categorias únicas (normalizadas)
   const uniqueCategories = useMemo(() => {
     if (!transactions || transactions.length === 0) return [];
-    return Array.from(new Set(transactions.map((t) => t.categoria))).sort();
+    return Array.from(
+      new Set(
+        transactions
+          .map((t) => (t.categoria || '').trim())
+          .filter((c) => c.length > 0)
+      )
+    ).sort((a, b) => a.localeCompare(b, 'pt-BR'));
   }, [transactions]);
-
   // Helper para parsear data sem problemas de timezone
   const parseDateSafe = (dateStr: string) => {
     const datePart = dateStr.split('T')[0];
@@ -93,24 +98,41 @@ export function TransactionsList({ transactions, onEditTransaction }: Transactio
     if (!transactions || transactions.length === 0) return [];
     return transactions
       .filter((t) => {
+        const categoria = (t.categoria || '').trim();
+
         // Filtro de busca textual
+        const search = filterState.search.toLowerCase();
         const matchesSearch =
-          (t.descricao || '').toLowerCase().includes(filterState.search.toLowerCase()) ||
-          (t.categoria || '').toLowerCase().includes(filterState.search.toLowerCase());
+          (t.descricao || '').toLowerCase().includes(search) ||
+          categoria.toLowerCase().includes(search);
 
         // Filtro de data (sem problemas de timezone)
         const transactionDate = parseDateSafe(t.data);
-        const filterFrom = filterState.dateFrom ? new Date(filterState.dateFrom.getFullYear(), filterState.dateFrom.getMonth(), filterState.dateFrom.getDate()) : null;
-        const filterTo = filterState.dateTo ? new Date(filterState.dateTo.getFullYear(), filterState.dateTo.getMonth(), filterState.dateTo.getDate(), 23, 59, 59) : null;
-        
+        const filterFrom = filterState.dateFrom
+          ? new Date(
+              filterState.dateFrom.getFullYear(),
+              filterState.dateFrom.getMonth(),
+              filterState.dateFrom.getDate()
+            )
+          : null;
+        const filterTo = filterState.dateTo
+          ? new Date(
+              filterState.dateTo.getFullYear(),
+              filterState.dateTo.getMonth(),
+              filterState.dateTo.getDate(),
+              23,
+              59,
+              59
+            )
+          : null;
+
         const matchesDateFrom = !filterFrom || transactionDate >= filterFrom;
         const matchesDateTo = !filterTo || transactionDate <= filterTo;
 
-        // Filtro de categoria
+        // Filtro de categoria (normalizado)
         const matchesCategory =
           filterState.categories.length === 0 ||
-          filterState.categories.includes(t.categoria);
-
+          filterState.categories.includes(categoria);
         // Filtro de tipo
         const matchesTipo =
           filterState.tipo === 'todos' || t.tipo === filterState.tipo;
